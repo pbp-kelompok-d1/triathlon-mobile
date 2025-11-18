@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../screens/product_form.dart';
 import '../screens/menu.dart';
+import '../screens/product_form.dart';
+import '../screens/product_list.dart';
 
 class ItemCard extends StatelessWidget {
   // Menampilkan kartu dengan ikon dan nama.
@@ -28,11 +29,31 @@ class ItemCard extends StatelessWidget {
                 content: Text("Kamu telah menekan tombol ${item.name}!")));
 
           // Navigate ke route yang sesuai (tergantung jenis tombol)
-          if (item.name == "Create Product") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProductFormPage()),
-            );
+          switch (item.name) {
+            case "Create Product":
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProductFormPage()),
+              );
+              break;
+            case "All Products":
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(mode: ProductListMode.all),
+                ),
+              );
+              break;
+            case "My Products":
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(mode: ProductListMode.mine),
+                ),
+              );
+              break;
+            default:
+              break;
           }
 
         },

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+
 import '../widgets/left_drawer.dart';
 import '../widgets/product_card.dart';
 
 class MyHomePage extends StatelessWidget {
-  MyHomePage({super.key});
+  const MyHomePage({super.key});
 
   
 
@@ -20,14 +23,17 @@ class MyHomePage extends StatelessWidget {
   final String npm = "2406404781"; //npm
   final String kelas = "A"; //kelas
 
-   final List<ItemHomepage> items = [
-    ItemHomepage("All Products", Icons.shopping_bag, const Color(0xFF1E3A8A)), // Blue
-    ItemHomepage("My Products", Icons.inventory, const Color(0xFF15803D)), // Green
-    ItemHomepage("Create Product", Icons.add_circle, const Color(0xFFDC2626)), // Red
+   final List<ItemHomepage> items = const [
+    ItemHomepage("All Products", Icons.shopping_bag, Color(0xFF1E3A8A)), // Blue
+    ItemHomepage("My Products", Icons.inventory, Color(0xFF15803D)), // Green
+    ItemHomepage("Create Product", Icons.add_circle, Color(0xFFDC2626)), // Red
   ];
   
 @override
     Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+    final username = request.jsonData['username'] ?? 'Explorer';
+
     // Scaffold menyediakan struktur dasar halaman dengan AppBar dan body.
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +48,7 @@ class MyHomePage extends StatelessWidget {
         // Warna latar belakang AppBar diambil dari skema warna tema aplikasi.
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      drawer: LeftDrawer(),
+  drawer: const LeftDrawer(),
       // Body halaman dengan padding di sekelilingnya.
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -76,7 +82,7 @@ class MyHomePage extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           const Color(0xFFCE1126), // Liverpool Red
-                          const Color(0xFFCE1126).withOpacity(0.8),
+                          const Color(0xFFCE1126).withValues(alpha: 0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -84,7 +90,7 @@ class MyHomePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFCE1126).withOpacity(0.3),
+                          color: const Color(0xFFCE1126).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -100,7 +106,7 @@ class MyHomePage extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -115,8 +121,8 @@ class MyHomePage extends StatelessWidget {
                         const SizedBox(width: 16.0),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'Selamat Datang di',
                               style: TextStyle(
                                 color: Colors.white,
@@ -124,14 +130,22 @@ class MyHomePage extends StatelessWidget {
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            SizedBox(height: 4.0),
-                            Text(
+                            const SizedBox(height: 4.0),
+                            const Text(
                               'Kosinduy YNWA Shop',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Text(
+                              'Logged in as $username',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.0,
                               ),
                             ),
                           ],
@@ -172,7 +186,7 @@ class ItemHomepage {
  final IconData icon;
  final Color color;
 
- ItemHomepage(this.name, this.icon, this.color);
+ const ItemHomepage(this.name, this.icon, this.color);
 }
 
 // ... // (... nya jangan di copy !)

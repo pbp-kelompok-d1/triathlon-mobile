@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+
+import '../constants.dart';
+import '../screens/login.dart';
 import '../screens/menu.dart';
 import '../screens/product_form.dart';
+import '../screens/product_list.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final request = context.read<CookieRequest>();
+
     return Drawer(
       child: ListView(
         children: [
@@ -45,8 +53,32 @@ class LeftDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MyHomePage(),
+                    builder: (context) => const MyHomePage(),
                   ));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopping_bag),
+            title: const Text('All Products'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(mode: ProductListMode.all),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.inventory_2),
+            title: const Text('My Products'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(mode: ProductListMode.mine),
+                ),
+              );
             },
           ),
           ListTile(
@@ -61,15 +93,27 @@ class LeftDrawer extends StatelessWidget {
               );
             },
           ),
+          const Divider(),
           ListTile(
-            leading: const Icon(Icons.shopping_bag),
-            title: const Text('All Products'),
-            onTap: () {
-              Navigator.pushReplacement(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              final response = await request.logout('$baseUrl/auth/logout/');
+
+              if (!context.mounted) return;
+
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(response['message'] ?? 'Logged out'),
+                  ),
+                );
+
+              Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => MyHomePage(),
-                ),
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
               );
             },
           ),

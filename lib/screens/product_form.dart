@@ -1,5 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+
+import '../constants.dart';
 import '../widgets/left_drawer.dart';
+import 'product_list.dart';
 
 class ProductFormPage extends StatefulWidget {
     const ProductFormPage({super.key});
@@ -20,6 +27,8 @@ class ProductFormPage extends StatefulWidget {
 
     @override
     Widget build(BuildContext context) {
+        final request = context.watch<CookieRequest>();
+
         return Scaffold(
           appBar: AppBar(
             title: const Center(
@@ -27,7 +36,7 @@ class ProductFormPage extends StatefulWidget {
                 'Add Product Form',
               ),
             ),
-            backgroundColor: Color(0xFFCE1126),
+            backgroundColor: const Color(0xFFCE1126),
             foregroundColor: Colors.white,
           ),
           drawer: const LeftDrawer(),
@@ -227,63 +236,90 @@ class ProductFormPage extends StatefulWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                         child: ElevatedButton(
-                                  style: ButtonStyle(
-                                    backgroundColor:
-                                        MaterialStateProperty.all(Color(0xFFCE1126)),
-                                  ),
-                                  onPressed: () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      await showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const Text('Product Successfully Saved'),
-                                            content: SingleChildScrollView(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  _buildInfoRow('Name', _name),
-                                                  _buildInfoRow('Price', _price),
-                                                  _buildInfoRow('Description', _description),
-                                                  _buildInfoRow('Thumbnail', _thumbnail.isEmpty ? 'Not provided' : _thumbnail),
-                                                  _buildInfoRow('Category', _category),
-                                                  _buildInfoRow('Is Featured', _isFeatured ? 'Yes' : 'No'),
-                                                  _buildInfoRow('Stock', _stock.toString()),
-                                                ],
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                child: const Text('OK'),
-                                                onPressed: () {
-                                                  Navigator.pop(context); // Close dialog
-                                                },
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                      // Reset form after dialog is closed
-                                      _formKey.currentState!.reset();
-                                      setState(() {
-                                        _name = "";
-                                        _price = "";
-                                        _description = "";
-                                        _thumbnail = "";
-                                        _category = "";
-                                        _isFeatured = false;
-                                        _stock = 0;
-                                      });
-                                      // Navigate back to previous page (main page)
-                                      Navigator.pop(context);
-                                    }
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFCE1126),
+                          ),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              final response = await request.postJson(
+                                '$baseUrl/create-flutter/',
+                                jsonEncode({
+                                  'name': _name,
+                                  'price': int.tryParse(_price) ?? 0,
+                                  'description': _description,
+                                  'thumbnail': _thumbnail,
+                                  'category': _category,
+                                  'is_featured': _isFeatured,
+                                  'stock': _stock,
+                                }),
+                              );
+
+                              if (!context.mounted) return;
+
+                              if (response['status'] == 'success') {
+                                final createdName = _name;
+
+                                _formKey.currentState!.reset();
+                                setState(() {
+                                  _name = '';
+                                  _price = '';
+                                  _description = '';
+                                  _thumbnail = '';
+                                  _category = '';
+                                  _isFeatured = false;
+                                  _stock = 0;
+                                });
+
+                                final shouldNavigate = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return AlertDialog(
+                                      title: const Text('Product Created'),
+                                      content: Text(
+                                        '"$createdName" has been saved successfully.\n\nDo you want to review your product list now?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(dialogContext, false),
+                                          child: const Text('Stay'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () => Navigator.pop(dialogContext, true),
+                                          child: const Text('Go to Products'),
+                                        ),
+                                      ],
+                                    );
                                   },
-                                  child: const Text(
-                                    "Save",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
+                                );
+
+                                if (!context.mounted) return;
+
+                                if (shouldNavigate == true) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ProductListPage(mode: ProductListMode.mine),
+                                    ),
+                                  );
+                                }
+                              } else {
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        response['message'] ?? 'Failed to save product',
+                                      ),
+                                    ),
+                                  );
+                              }
+                            }
+                          },
+                          child: const Text(
+                            "Save",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                         ),
                       ),
                     ],
@@ -293,28 +329,5 @@ class ProductFormPage extends StatefulWidget {
         );
     }
 
-    Widget _buildInfoRow(String label, String value) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 80,
-              child: Text(
-                '$label:',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 }
 

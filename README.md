@@ -1,3 +1,36 @@
+# Assignment 9 – Flutter x Django Integration
+
+This iteration wires the Flutter client to the Django backend so that authentication, product listings, and product creation all flow through real APIs.
+
+## Features
+
+- 🔐 **Session-based auth** using `pbp_django_auth` and `Provider` so login/logout state persists across the app.
+- 📱 **Login & Register screens** that post to `/auth/login/` and `/auth/register/` and surface server-side error messages.
+- 🧭 **Drawer navigation** with quick links to Home, All Products, My Products, Create Product, plus a logout action that clears the Django session.
+- 📦 **All/My product lists** driven by `/json/` and `/json/user/` endpoints using the `ProductEntry` model, including pull-to-refresh and detail navigation.
+- 📝 **Create product form** that validates user input locally and submits JSON to `/create-flutter/`, showing success/error SnackBars.
+- 🖼 **Image proxy support** automatically routes external thumbnails through `/proxy-image/` for reliable rendering on every platform.
+
+## Try it locally
+
+```powershell
+cd c:\Users\Aidam\pbp_flutter\KosinduyYNWA-mobile
+flutter pub get
+flutter run
+```
+
+Make sure the Django server (from `kosinduyYNWA_django_server`) is running on `http://10.0.2.2:8000` so the mobile app can hit the endpoints listed above.
+
+## Tests
+
+```powershell
+flutter test
+```
+
+The widget test now validates that the login screen renders correctly.
+
+---
+
 # TUGAS 7 - Elemen Dasar Flutter
 
 ## Jelaskan apa itu widget tree pada Flutter dan bagaimana hubungan parent-child (induk-anak) bekerja antar widget.
