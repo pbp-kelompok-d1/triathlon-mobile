@@ -14,6 +14,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // Controllers keep the latest credential input handy for the JSON request.
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -79,6 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24.0),
                   ElevatedButton(
                     onPressed: () async {
+                      // Hit the Django auth endpoint via CookieRequest so session cookies persist.
                       final response = await request.login(
                         '$baseUrl/auth/login/',
                         {
@@ -90,6 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                       if (!context.mounted) return;
 
                       if (request.loggedIn) {
+                        // Successful login flows straight into the home menu.
                         ScaffoldMessenger.of(context)
                           ..hideCurrentSnackBar()
                           ..showSnackBar(
@@ -106,11 +109,17 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       } else {
+                        // Bubble up backend errors so the user knows what to fix.
+                        String errorMessage = 'Unknown error';
+                        if (response['message'] != null) {
+                          errorMessage = response['message'];
+                        }
+
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
                             title: const Text('Login Failed'),
-                            content: Text(response['message'] ?? 'Unknown error'),
+                            content: Text(errorMessage),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),

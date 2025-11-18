@@ -1,36 +1,3 @@
-# Assignment 9 – Flutter x Django Integration
-
-This iteration wires the Flutter client to the Django backend so that authentication, product listings, and product creation all flow through real APIs.
-
-## Features
-
-- 🔐 **Session-based auth** using `pbp_django_auth` and `Provider` so login/logout state persists across the app.
-- 📱 **Login & Register screens** that post to `/auth/login/` and `/auth/register/` and surface server-side error messages.
-- 🧭 **Drawer navigation** with quick links to Home, All Products, My Products, Create Product, plus a logout action that clears the Django session.
-- 📦 **All/My product lists** driven by `/json/` and `/json/user/` endpoints using the `ProductEntry` model, including pull-to-refresh and detail navigation.
-- 📝 **Create product form** that validates user input locally and submits JSON to `/create-flutter/`, showing success/error SnackBars.
-- 🖼 **Image proxy support** automatically routes external thumbnails through `/proxy-image/` for reliable rendering on every platform.
-
-## Try it locally
-
-```powershell
-cd c:\Users\Aidam\pbp_flutter\KosinduyYNWA-mobile
-flutter pub get
-flutter run
-```
-
-Make sure the Django server (from `kosinduyYNWA_django_server`) is running on `http://10.0.2.2:8000` so the mobile app can hit the endpoints listed above.
-
-## Tests
-
-```powershell
-flutter test
-```
-
-The widget test now validates that the login screen renders correctly.
-
----
-
 # TUGAS 7 - Elemen Dasar Flutter
 
 ## Jelaskan apa itu widget tree pada Flutter dan bagaimana hubungan parent-child (induk-anak) bekerja antar widget.
@@ -95,3 +62,44 @@ Dalam aplikasi Kosinduy YNWA, ketiga widget ini diimplementasikan secara strateg
 Penyesuaian warna tema untuk menciptakan identitas visual yang konsisten dengan brand Liverpool Football Club dilakukan melalui konfigurasi ColorScheme di MaterialApp dan penggunaan warna yang consistent di seluruh komponen aplikasi. Dalam main.dart, tema aplikasi dikonfigurasi dengan ColorScheme.fromSeed yang menggunakan seedColor Liverpool red (Color(0xFFCE1126)) sebagai warna utama, dengan primary color yang sama untuk memastikan konsistensi, dan secondary color menggunakan Liverpool gold (Color(0xFFFDB913)) untuk aksen. Surface color diset ke Colors.white untuk background yang clean, sementara onPrimary dan onSecondary color diatur untuk memastikan kontras text yang optimal.
 
 Implementasi tema ini kemudian diterapkan secara konsisten di seluruh aplikasi melalui Theme.of(context). AppBar di setiap halaman menggunakan Theme.of(context).colorScheme.primary untuk backgroundColor, memastikan semua header memiliki warna Liverpool red yang signature. DrawerHeader juga menggunakan warna yang sama (Color(0xFFCE1126)) untuk menciptakan kontinuitas visual. Untuk komponen form di ProductFormPage, ElevatedButton menggunakan MaterialStateProperty.all(Color(0xFFCE1126)) untuk mempertahankan konsistensi warna brand. Tombol-tombol pada halaman utama (ItemCard) menggunakan warna individual yang kontras namun tetap harmonis: biru untuk "All Products", hijau untuk "My Products", dan merah untuk "Create Product", memberikan visual distinction sambil tetap mempertahankan professional appearance. Pendekatan ini memastikan bahwa identity Liverpool Football Club terefleksi dengan kuat melalui penggunaan warna signature merah di elemen-elemen kunci seperti AppBar, drawer, dan action buttons, dengan tetap mempertahankan user experience dengan kontras warna yang baik dan hierarchy visual yang jelas.
+
+
+
+
+# TUGAS 9 
+
+## Jelaskan mengapa kita perlu membuat model Dart saat mengambil/mengirim data JSON? Apa konsekuensinya jika langsung memetakan Map<String, dynamic> tanpa model (terkait validasi tipe, null-safety, maintainability)?
+
+Model Dart seperti ProductEntry membuat setiap field hasil JSON punya tipe yang jelas (int, String, bool, dan sebagainya) sekaligus fallback yang konsisten ketika backend mengirim nilai kosong atau tipe yang melenceng. Parsing hanya terjadi di satu tempat melalui fromJson/toJson sehingga pengecekan null, konversi angka, dan logika default tidak tersebar ke banyak widget. Kalau langsung memakai Map<String, dynamic>, validasi tipe berpindah ke setiap lokasi pemakaian sehingga rawan TypeError, null-safety sulit dijaga karena map bisa mengembalikan null kapan saja, dan maintainability turun karena setiap perubahan API memaksa kita merapikan banyak file sekaligus. Dengan model, perubahan cukup di satu berkas dan IDE bisa membantu mendeteksi field yang belum dipetakan.
+
+## Apa fungsi package http dan CookieRequest dalam tugas ini? Jelaskan perbedaan peran http vs CookieRequest.
+
+Package http adalah klien umum untuk melakukan GET atau POST tanpa perlu menyimpan state session. Pada tugas ini saya lebih banyak memakai CookieRequest dari pbp_django_auth karena ia memanfaatkan http di balik layar lalu otomatis mengelola cookie, CSRF token, serta menyediakan helper login, register, dan logout. Jadi http cocok ketika ingin memukul API publik yang tidak butuh autentikasi, sedangkan CookieRequest dipakai untuk seluruh endpoint Django yang membutuhkan session agar setiap permintaan membawa cookie dan status login tetap tersimpan.
+
+## Jelaskan mengapa instance CookieRequest perlu untuk dibagikan ke semua komponen di aplikasi Flutter.
+
+CookieRequest menyimpan state login di dalam instansenya. Jika setiap layar membuat objek sendiri, session akan hilang dan pengguna dipaksa login ulang saat berpindah halaman. Karena itu saya menaruh Provider<CookieRequest> di main.dart lalu mengambilnya lewat context.watch pada setiap screen yang butuh akses server. Login yang dilakukan pada LoginPage otomatis bisa dipakai oleh LeftDrawer, ProductFormPage, maupun ProductListPage tanpa mengirim ulang kredensial. Berbagi instance juga memudahkan ketika ingin logout atau membaca jsonData (misalnya untuk menampilkan username di menu).
+
+## Jelaskan konfigurasi konektivitas yang diperlukan agar Flutter dapat berkomunikasi dengan Django. Mengapa kita perlu menambahkan 10.0.2.2 pada ALLOWED_HOSTS, mengaktifkan CORS dan pengaturan SameSite/cookie, dan menambahkan izin akses internet di Android? Apa yang akan terjadi jika konfigurasi tersebut tidak dilakukan dengan benar?
+
+Emulator Android melihat host machine sebagai 10.0.2.2 sehingga alamat tersebut harus dimasukkan ke ALLOWED_HOSTS supaya Django tidak menolak request. Karena Flutter berjalan di origin berbeda, CORS perlu mengizinkan origin itu dan cookie harus diatur ke SameSite=None (serta Secure) agar session bisa dikirim silang domain. Di sisi aplikasi, AndroidManifest perlu izin INTERNET agar emulator boleh menjangkau jaringan. Jika salah satu konfigurasi ini absen, hasilnya bisa berupa koneksi gagal total (tidak ada izin internet), permintaan ditolak Django (ALLOWED_HOSTS atau CORS salah), atau login tidak pernah tersimpan karena cookie tidak ikut terkirim.
+
+## Jelaskan mekanisme pengiriman data mulai dari input hingga dapat ditampilkan pada Flutter.
+
+Pengguna mengisi form di ProductFormPage. Setelah validasi lokal lolos, seluruh nilai dikumpulkan ke map lalu diubah menjadi JSON string sebelum dikirim lewat CookieRequest.postJson menuju endpoint create-flutter di Django. Server mem-parsing payload, membuat objek Product, menyimpannya, lalu mengirim balasan berisi status serta data produk yang baru dibuat. Jika status sukses, Flutter mereset form dan menawarkan navigasi ke daftar produk. Halaman produk kemudian memanggil json atau json/user, mengubah array JSON menjadi List<ProductEntry>, dan menampilkannya melalui ListView serta halaman detail.
+
+## Jelaskan mekanisme autentikasi dari login, register, hingga logout. Mulai dari input data akun pada Flutter ke Django hingga selesainya proses autentikasi oleh Django dan tampilnya menu pada Flutter.
+
+Pada register, Flutter mengirim username, password1, dan password2 ke endpoint auth/register. Django memvalidasi, membuat User baru, lalu mengembalikan status sehingga Flutter bisa kembali ke halaman login. Saat login, Flutter memanggil request.login ke auth/login; CookieRequest menyimpan cookie session yang diberikan Django (melalui auth_login). Begitu statusnya sukses, aplikasi menampilkan Snackbar sambutan dan mengganti layar ke MyHomePage. Selama session hidup, setiap request berikutnya membawa cookie sehingga endpoint json/user tahu siapa yang meminta. Logout dilakukan lewat request.logout ke auth/logout; Django menjalankan auth_logout, menghapus session, dan Flutter mengosongkan stack ke LoginPage sehingga menu hanya muncul jika request.loggedIn bernilai true.
+
+## Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step! (bukan hanya sekadar mengikuti tutorial).
+
+Langkah yang saya lakukan:
+1. **Siapkan backend** – Menambah endpoint JSON seperti show_json, show_json_user, create_product_flutter, dan proxy_image, plus view autentikasi khusus di authentication/views.py. Semua konfigurasi ALLOWED_HOSTS, CORS, dan cookie dipastikan cocok dengan emulator.
+2. **Konfigurasi Flutter** – Menambahkan dependency pbp_django_auth, membuat constants.dart untuk base URL lintas platform, lalu membungkus aplikasi dengan Provider<CookieRequest> agar instance tersedia di seluruh widget tree.
+3. **Bangun layar autentikasi** – Mengimplementasikan LoginPage dan RegisterPage dengan form sederhana, validasi dasar, serta Snackbar untuk menampilkan pesan backend. Navigasi sukses diarahkan ke MyHomePage.
+4. **Integrasi navigasi/menu** – Memperbarui LeftDrawer, MyHomePage, dan ItemCard supaya semua rute (beranda, daftar produk, form) saling terhubung dan aksi logout memanfaatkan CookieRequest yang sama.
+5. **Model dan daftar produk** – Membuat ProductEntry, ProductListPage, serta ProductDetailPage. Endpoint json dipanggil melalui CookieRequest.get, hasilnya dipetakan ke model, lalu ditampilkan dalam ListView dengan kartu detail.
+6. **Form produk dan dialog** – ProductFormPage memvalidasi input, mengirim JSON ke create-flutter, lalu memunculkan dialog pilihan (tetap di form atau pergi ke daftar). Dialog memakai Navigator.push agar pengguna bisa kembali ke form bila perlu.
+
+Seluruh tahapan di atas saya jalankan secara berurut: mulai dari backend, lanjut ke autentikasi Flutter, kemudian fetching data, dan form submission.

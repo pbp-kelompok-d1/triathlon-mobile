@@ -46,7 +46,7 @@ class ProductFormPage extends StatefulWidget {
                 child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children:[
-                        // === Name ===
+                        // Name field
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: TextFormField(
@@ -71,7 +71,7 @@ class ProductFormPage extends StatefulWidget {
                           ),
                         ),
                         
-                        // === Price ===
+                        // Price field
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: TextFormField(
@@ -106,7 +106,7 @@ class ProductFormPage extends StatefulWidget {
                           ),
                         ),
                           
-                        // === Description ===
+                        // Description field
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: TextFormField(
@@ -132,7 +132,7 @@ class ProductFormPage extends StatefulWidget {
                         ),
                       ),
 
-                      // === Thumbnail ===
+                      // Thumbnail field
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: TextFormField(
@@ -160,7 +160,7 @@ class ProductFormPage extends StatefulWidget {
                         ),
                       ),
 
-                      // === Category ===
+                      // Category field
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: TextFormField(
@@ -185,7 +185,7 @@ class ProductFormPage extends StatefulWidget {
                         ),
                       ),
 
-                      // === Is Featured ===
+                      // Feature toggle
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SwitchListTile(
@@ -199,7 +199,7 @@ class ProductFormPage extends StatefulWidget {
                         ),
                       ),
 
-                      // === Stock ===
+                      // Stock field
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: TextFormField(
@@ -212,7 +212,17 @@ class ProductFormPage extends StatefulWidget {
                           ),
                           onChanged: (String? value) {
                             setState(() {
-                              _stock = int.tryParse(value!) ?? 0;
+                              if (value == null) {
+                                _stock = 0;
+                                return;
+                              }
+
+                              final parsedStock = int.tryParse(value);
+                              if (parsedStock == null) {
+                                _stock = 0;
+                              } else {
+                                _stock = parsedStock;
+                              }
                             });
                           },
                           validator: (String? value) {
@@ -230,7 +240,7 @@ class ProductFormPage extends StatefulWidget {
                           },
                         ),
                       ),
-                      // === Tombol Simpan ===
+                      // Submit button
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Padding(
@@ -241,11 +251,18 @@ class ProductFormPage extends StatefulWidget {
                           ),
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
+                              // Send the form data to the Django create endpoint.
                               final response = await request.postJson(
                                 '$baseUrl/create-flutter/',
                                 jsonEncode({
                                   'name': _name,
-                                  'price': int.tryParse(_price) ?? 0,
+                                  'price': () {
+                                    final parsedPrice = int.tryParse(_price);
+                                    if (parsedPrice == null) {
+                                      return 0;
+                                    }
+                                    return parsedPrice;
+                                  }(),
                                   'description': _description,
                                   'thumbnail': _thumbnail,
                                   'category': _category,
@@ -259,6 +276,7 @@ class ProductFormPage extends StatefulWidget {
                               if (response['status'] == 'success') {
                                 final createdName = _name;
 
+                                // Clear the form so another product can be added right away.
                                 _formKey.currentState!.reset();
                                 setState(() {
                                   _name = '';
@@ -270,6 +288,7 @@ class ProductFormPage extends StatefulWidget {
                                   _stock = 0;
                                 });
 
+                                // Ask whether to stay on the form or jump to the product list.
                                 final shouldNavigate = await showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) {
@@ -303,13 +322,17 @@ class ProductFormPage extends StatefulWidget {
                                   );
                                 }
                               } else {
+                                String errorMessage = 'Failed to save product';
+                                if (response['message'] != null) {
+                                  errorMessage = response['message'];
+                                }
+
+                                // Show backend errors through a SnackBar.
                                 ScaffoldMessenger.of(context)
                                   ..hideCurrentSnackBar()
                                   ..showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        response['message'] ?? 'Failed to save product',
-                                      ),
+                                      content: Text(errorMessage),
                                     ),
                                   );
                               }

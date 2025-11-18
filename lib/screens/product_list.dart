@@ -9,6 +9,7 @@ import '../models/product_entry.dart';
 import '../widgets/left_drawer.dart';
 import 'product_detail.dart';
 
+// product list doubles as "all items" feed and "my submissions" view.
 enum ProductListMode { all, mine }
 
 class ProductListPage extends StatefulWidget {
@@ -16,7 +17,12 @@ class ProductListPage extends StatefulWidget {
 
   final ProductListMode mode;
 
-  String get title => mode == ProductListMode.all ? 'All Products' : 'My Products';
+  String get title {
+    if (mode == ProductListMode.all) {
+      return 'All Products';
+    }
+    return 'My Products';
+  }
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -31,11 +37,15 @@ class _ProductListPageState extends State<ProductListPage> {
     _productsFuture = _fetchProducts();
   }
 
+  // Pull the matching JSON endpoint depending on which tab is open.
   Future<List<ProductEntry>> _fetchProducts() async {
     final request = context.read<CookieRequest>();
-    final endpoint = widget.mode == ProductListMode.all
-        ? '$baseUrl/json/'
-        : '$baseUrl/json/user/';
+    String endpoint;
+    if (widget.mode == ProductListMode.all) {
+      endpoint = '$baseUrl/json/';
+    } else {
+      endpoint = '$baseUrl/json/user/';
+    }
 
   final response = await request.get(endpoint);
 
@@ -46,6 +56,7 @@ class _ProductListPageState extends State<ProductListPage> {
     return [];
   }
 
+  // Helper function so both pull-to-refresh and the AppBar button reuse the same logic.
   Future<void> _refresh() async {
     setState(() {
       _productsFuture = _fetchProducts();
@@ -85,16 +96,26 @@ class _ProductListPageState extends State<ProductListPage> {
               );
             }
 
-            final products = snapshot.data ?? [];
+            List<ProductEntry> products;
+            if (snapshot.data == null) {
+              products = <ProductEntry>[];
+            } else {
+              products = snapshot.data!;
+            }
 
             if (products.isEmpty) {
+              String emptyMessage;
+              if (widget.mode == ProductListMode.mine) {
+                emptyMessage = "You haven't created any products yet.";
+              } else {
+                emptyMessage = 'No products available.';
+              }
+
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Text(
-                    widget.mode == ProductListMode.mine
-                        ? "You haven't created any products yet."
-                        : 'No products available.',
+                    emptyMessage,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
@@ -102,6 +123,7 @@ class _ProductListPageState extends State<ProductListPage> {
               );
             }
 
+            // Render catalog with spacing between cards.
             return ListView.separated(
               padding: const EdgeInsets.all(16.0),
               itemCount: products.length,
@@ -118,6 +140,7 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 }
 
+// Small reusable tile so both list variants share identical styling.
 class _ProductListTile extends StatelessWidget {
   const _ProductListTile({required this.product});
 
@@ -133,6 +156,25 @@ class _ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  // Build either the thumbnail image or the placeholder box before wiring it into ListTile.leading.
+  Widget leadingWidget;
+    if (_imageUrl != null) {
+      leadingWidget = Image.network(
+        _imageUrl!,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+      );
+    } else {
+      leadingWidget = Container(
+        width: 60,
+        height: 60,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image, color: Colors.grey),
+      );
+    }
+
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -140,20 +182,7 @@ class _ProductListTile extends StatelessWidget {
         contentPadding: const EdgeInsets.all(12.0),
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8.0),
-          child: _imageUrl != null
-              ? Image.network(
-                  _imageUrl!,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
-                )
-              : Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.image, color: Colors.grey),
-                ),
+          child: leadingWidget,
         ),
         title: Text(
           product.name,

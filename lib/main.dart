@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'screens/login.dart';
 
 void main() {
+  // Bootstraps the app with the shared CookieRequest client so every screen can hit Django.
   runApp(const MyApp());
 }
 
@@ -14,6 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
   return Provider<CookieRequest>(
+      // Provide one CookieRequest globally for authentication + API state.
       create: (_) => CookieRequest(),
       child: MaterialApp(
         title: 'Kosinduy YNWA Shop',

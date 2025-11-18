@@ -32,39 +32,97 @@ class ProductEntry {
   });
 
   factory ProductEntry.fromJson(Map<String, dynamic> json) {
+    // Helper so every numeric field is parsed consistently from whatever JSON sends us.
     int parseInt(dynamic value) {
       if (value is int) return value;
       if (value is double) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? 0;
+      if (value is String) {
+        final parsedValue = int.tryParse(value);
+        if (parsedValue == null) {
+          return 0;
+        }
+        return parsedValue;
+      }
       return 0;
+    }
+
+    final dynamic rawUserId = json['user_id'];
+    int? parsedUserId;
+    if (rawUserId == null) {
+      parsedUserId = null;
+    } else {
+      parsedUserId = parseInt(rawUserId);
+    }
+
+    final dynamic rawCreatedAt = json['created_at'];
+    DateTime? parsedCreatedAt;
+    if (rawCreatedAt != null && rawCreatedAt != '') {
+      parsedCreatedAt = DateTime.tryParse(rawCreatedAt);
+    } else {
+      parsedCreatedAt = null;
+    }
+
+  // All of the following sections normalize nullable JSON fields into safe defaults.
+  String nameValue = '';
+    if (json['name'] != null) {
+      nameValue = json['name'].toString();
+    }
+
+    String descriptionValue = '';
+    if (json['description'] != null) {
+      descriptionValue = json['description'].toString();
+    }
+
+    String categoryValue = '';
+    if (json['category'] != null) {
+      categoryValue = json['category'].toString();
+    }
+
+    String thumbnailValue = '';
+    if (json['thumbnail'] != null) {
+      thumbnailValue = json['thumbnail'].toString();
+    }
+
+    bool isFeaturedValue = false;
+    if (json['is_featured'] is bool) {
+      isFeaturedValue = json['is_featured'];
     }
 
     return ProductEntry(
       id: json['id'].toString(),
-      name: json['name'] ?? '',
+      name: nameValue,
       price: parseInt(json['price']),
-      description: json['description'] ?? '',
-      category: json['category'] ?? '',
-      thumbnail: json['thumbnail'] ?? '',
-      isFeatured: json['is_featured'] ?? false,
+      description: descriptionValue,
+      category: categoryValue,
+      thumbnail: thumbnailValue,
+      isFeatured: isFeaturedValue,
       stock: parseInt(json['stock']),
-      userId: json['user_id'] == null ? null : parseInt(json['user_id']),
-      createdAt: json['created_at'] != null && json['created_at'] != ''
-          ? DateTime.tryParse(json['created_at'])
-          : null,
+      userId: parsedUserId,
+      createdAt: parsedCreatedAt,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'price': price,
-        'description': description,
-        'category': category,
-        'thumbnail': thumbnail,
-        'is_featured': isFeatured,
-        'stock': stock,
-        'user_id': userId,
-        'created_at': createdAt?.toIso8601String(),
-      };
+  Map<String, dynamic> toJson() {
+  // Preserve the timestamp format Django expects while still tolerating nulls.
+  final DateTime? createdAtValue = createdAt;
+    String? createdAtString;
+    if (createdAtValue != null) {
+      createdAtString = createdAtValue.toIso8601String();
+    } else {
+      createdAtString = null;
+    }
+
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'description': description,
+      'category': category,
+      'thumbnail': thumbnail,
+      'is_featured': isFeatured,
+      'stock': stock,
+      'user_id': userId,
+      'created_at': createdAtString,
+    };
+  }
 }

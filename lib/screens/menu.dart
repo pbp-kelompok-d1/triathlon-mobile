@@ -32,7 +32,11 @@ class MyHomePage extends StatelessWidget {
 @override
     Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-    final username = request.jsonData['username'] ?? 'Explorer';
+    // Grab the username from CookieRequest state so the greeting reflects whoever logged in.
+    String username = 'Explorer';
+    if (request.jsonData['username'] != null) {
+      username = request.jsonData['username'].toString();
+    }
 
     // Scaffold menyediakan struktur dasar halaman dengan AppBar dan body.
     return Scaffold(
@@ -167,6 +171,7 @@ class MyHomePage extends StatelessWidget {
                     shrinkWrap: true,
 
                     // Menampilkan ItemCard untuk setiap item dalam list items.
+                    // Each dashboard card routes to the matching screen that backs the assignment tasks.
                     children: items.map((ItemHomepage item) {
                       return ItemCard(item);
                     }).toList(),

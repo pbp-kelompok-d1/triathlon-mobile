@@ -15,6 +15,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  // Controllers for form input before sending it to Django.
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
@@ -76,6 +77,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 24.0),
                   ElevatedButton(
                     onPressed: () async {
+                      // Post the registration data to the Django endpoint.
                       final response = await request.postJson(
                         '$baseUrl/auth/register/',
                         jsonEncode({
@@ -98,9 +100,15 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         );
                       } else {
+                        // Show whatever error message the server returned.
+                        String registerMessage = 'Failed to register';
+                        if (response['message'] != null) {
+                          registerMessage = response['message'];
+                        }
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(response['message'] ?? 'Failed to register'),
+                            content: Text(registerMessage),
                           ),
                         );
                       }

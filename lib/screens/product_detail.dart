@@ -7,13 +7,15 @@ class ProductDetailPage extends StatelessWidget {
 
   final ProductEntry product;
 
+  // Proxy http thumbnails through Django so every platform can load them safely.
   String? get _imageUrl {
     if (product.thumbnail.isEmpty) return null;
     if (product.thumbnail.startsWith('http')) {
       const proxyPath = '/proxy-image/?url=';
-      return product.thumbnail.contains('proxy-image')
-          ? product.thumbnail
-          : 'http://10.0.2.2:8000$proxyPath${Uri.encodeComponent(product.thumbnail)}';
+      if (product.thumbnail.contains('proxy-image')) {
+        return product.thumbnail;
+      }
+      return 'http://10.0.2.2:8000$proxyPath${Uri.encodeComponent(product.thumbnail)}';
     }
     return product.thumbnail;
   }
@@ -52,32 +54,87 @@ class ProductDetailPage extends StatelessWidget {
                 child: const Center(child: Icon(Icons.image, size: 48)),
               ),
             const SizedBox(height: 16.0),
-            Text(
-              product.name,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            Builder(
+              builder: (context) {
+                // Force the title to stay bold even when headlineSmall is null.
+                TextStyle? nameStyle = Theme.of(context).textTheme.headlineSmall;
+                if (nameStyle != null) {
+                  nameStyle = nameStyle.copyWith(fontWeight: FontWeight.bold);
+                }
+                return Text(
+                  product.name,
+                  style: nameStyle,
+                );
+              },
             ),
             const SizedBox(height: 8.0),
-            Text(
-              'Rp${product.price}',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            Builder(
+              builder: (context) {
+                // Tint the price with the primary red the app uses elsewhere.
+                TextStyle? priceStyle = Theme.of(context).textTheme.titleLarge;
+                if (priceStyle != null) {
+                  priceStyle = priceStyle.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
-                  ),
+                  );
+                }
+                return Text(
+                  'Rp${product.price}',
+                  style: priceStyle,
+                );
+              },
             ),
             const Divider(height: 32.0),
-            _DetailRow(label: 'Category', value: product.category.isEmpty ? '-' : product.category),
+            Builder(
+              builder: (_) {
+                // Show a dash whenever the backend omits the category field.
+                String categoryValue = product.category;
+                if (categoryValue.isEmpty) {
+                  categoryValue = '-';
+                }
+                return _DetailRow(label: 'Category', value: categoryValue);
+              },
+            ),
             _DetailRow(label: 'Stock', value: product.stock.toString()),
-            _DetailRow(label: 'Featured', value: product.isFeatured ? 'Yes' : 'No'),
-            _DetailRow(label: 'Owner ID', value: product.userId?.toString() ?? '-'),
+            Builder(
+              builder: (_) {
+                // Convert the boolean flag into "Yes"/"No" text.
+                String featuredValue = 'No';
+                if (product.isFeatured) {
+                  featuredValue = 'Yes';
+                }
+                return _DetailRow(label: 'Featured', value: featuredValue);
+              },
+            ),
+            Builder(
+              builder: (_) {
+                // Owner ID can be null, so display a dash when it is missing.
+                final int? ownerId = product.userId;
+                String ownerIdValue;
+                if (ownerId == null) {
+                  ownerIdValue = '-';
+                } else {
+                  ownerIdValue = ownerId.toString();
+                }
+                return _DetailRow(label: 'Owner ID', value: ownerIdValue);
+              },
+            ),
             const SizedBox(height: 16.0),
             Text(
               'Description',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8.0),
-            Text(product.description.isEmpty ? 'No description available.' : product.description),
+            Builder(
+              builder: (_) {
+                // Swap in a default sentence when no description was provided.
+                String descriptionText = product.description;
+                if (descriptionText.isEmpty) {
+                  descriptionText = 'No description available.';
+                }
+                return Text(descriptionText);
+              },
+            ),
           ],
         ),
       ),
