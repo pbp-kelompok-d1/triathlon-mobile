@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-List<ProductEntry> productEntryFromJson(String str) =>
-    List<ProductEntry>.from(json.decode(str).map((x) => ProductEntry.fromJson(x)));
+List<ProductEntry> productEntryFromJson(String str) => List<ProductEntry>.from(
+      json.decode(str).map((x) => ProductEntry.fromJson(x)),
+    );
 
 String productEntryToJson(List<ProductEntry> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
@@ -9,35 +10,31 @@ String productEntryToJson(List<ProductEntry> data) =>
 class ProductEntry {
   final String id;
   final String name;
-  final int price;
+  final double price;
   final String description;
   final String category;
+  final String categoryLabel;
   final String thumbnail;
-  final bool isFeatured;
   final int stock;
-  final int? userId;
-  final DateTime? createdAt;
+  final String? sellerUsername;
 
-  ProductEntry({
+  const ProductEntry({
     required this.id,
     required this.name,
     required this.price,
     required this.description,
     required this.category,
+    required this.categoryLabel,
     required this.thumbnail,
-    required this.isFeatured,
     required this.stock,
-    required this.userId,
-    required this.createdAt,
+    required this.sellerUsername,
   });
 
   factory ProductEntry.fromJson(Map<String, dynamic> json) {
-    // Helper so every numeric field is parsed consistently from whatever JSON sends us.
-    int parseInt(dynamic value) {
-      if (value is int) return value;
-      if (value is double) return value.toInt();
+    double parsePrice(dynamic value) {
+      if (value is num) return value.toDouble();
       if (value is String) {
-        final parsedValue = int.tryParse(value);
+        final parsedValue = double.tryParse(value);
         if (parsedValue == null) {
           return 0;
         }
@@ -46,83 +43,46 @@ class ProductEntry {
       return 0;
     }
 
-    final dynamic rawUserId = json['user_id'];
-    int? parsedUserId;
-    if (rawUserId == null) {
-      parsedUserId = null;
-    } else {
-      parsedUserId = parseInt(rawUserId);
+    int parseStock(dynamic value) {
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) {
+        return int.tryParse(value) ?? 0;
+      }
+      return 0;
     }
 
-    final dynamic rawCreatedAt = json['created_at'];
-    DateTime? parsedCreatedAt;
-    if (rawCreatedAt != null && rawCreatedAt != '') {
-      parsedCreatedAt = DateTime.tryParse(rawCreatedAt);
-    } else {
-      parsedCreatedAt = null;
-    }
-
-  // All of the following sections normalize nullable JSON fields into safe defaults.
-  String nameValue = '';
-    if (json['name'] != null) {
-      nameValue = json['name'].toString();
-    }
-
-    String descriptionValue = '';
-    if (json['description'] != null) {
-      descriptionValue = json['description'].toString();
-    }
-
-    String categoryValue = '';
-    if (json['category'] != null) {
-      categoryValue = json['category'].toString();
-    }
-
-    String thumbnailValue = '';
-    if (json['thumbnail'] != null) {
-      thumbnailValue = json['thumbnail'].toString();
-    }
-
-    bool isFeaturedValue = false;
-    if (json['is_featured'] is bool) {
-      isFeaturedValue = json['is_featured'];
+    String readString(dynamic value) {
+      if (value == null) return '';
+      return value.toString();
     }
 
     return ProductEntry(
-      id: json['id'].toString(),
-      name: nameValue,
-      price: parseInt(json['price']),
-      description: descriptionValue,
-      category: categoryValue,
-      thumbnail: thumbnailValue,
-      isFeatured: isFeaturedValue,
-      stock: parseInt(json['stock']),
-      userId: parsedUserId,
-      createdAt: parsedCreatedAt,
+      id: readString(json['id']),
+      name: readString(json['name']),
+      price: parsePrice(json['price']),
+      description: readString(json['description']),
+      category: readString(json['category']),
+      categoryLabel: readString(json['category_label']).isEmpty
+          ? readString(json['category'])
+          : readString(json['category_label']),
+      thumbnail: readString(json['thumbnail']),
+      stock: parseStock(json['stock']),
+      sellerUsername: json['seller_username']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
-  // Preserve the timestamp format Django expects while still tolerating nulls.
-  final DateTime? createdAtValue = createdAt;
-    String? createdAtString;
-    if (createdAtValue != null) {
-      createdAtString = createdAtValue.toIso8601String();
-    } else {
-      createdAtString = null;
-    }
-
     return {
       'id': id,
       'name': name,
       'price': price,
       'description': description,
       'category': category,
+      'category_label': categoryLabel,
       'thumbnail': thumbnail,
-      'is_featured': isFeatured,
       'stock': stock,
-      'user_id': userId,
-      'created_at': createdAtString,
+      'seller_username': sellerUsername,
     };
   }
 }

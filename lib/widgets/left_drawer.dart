@@ -21,12 +21,12 @@ class LeftDrawer extends StatelessWidget {
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(
-              color: Color(0xFFCE1126),
+              color: Color(0xFF1D4ED8),
             ),
             child: Column(
               children: [
                 Text(
-                  'Kosinduy YNWA Shop',
+                  'Triathlon Gear Hub',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -36,7 +36,7 @@ class LeftDrawer extends StatelessWidget {
                 ),
                 Padding(padding: EdgeInsets.all(8)),
                 Text(
-                  "Manage your football products here!",
+                  "Curate, list, and track your endurance gear in one place.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -60,7 +60,7 @@ class LeftDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.shopping_bag),
-            title: const Text('All Products'),
+            title: const Text('All Gear'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
@@ -72,7 +72,7 @@ class LeftDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.inventory_2),
-            title: const Text('My Products'),
+            title: const Text('My Gear'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
@@ -84,7 +84,7 @@ class LeftDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.add_circle),
-            title: const Text('Create Product'),
+            title: const Text('List New Gear'),
             onTap: () {
               Navigator.push(
                 context,

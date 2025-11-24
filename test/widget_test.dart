@@ -8,13 +8,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:football_news/main.dart';
+import 'package:triathlon_mobile/main.dart';
 
 void main() {
   testWidgets('Login screen renders expected widgets', (tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('Kosinduy YNWA Shop'), findsOneWidget);
+  expect(find.text('Triathlon Gear Hub'), findsOneWidget);
     expect(find.text('Login'), findsWidgets);
     expect(find.byType(TextField), findsNWidgets(2));
     expect(find.byType(ElevatedButton), findsOneWidget);

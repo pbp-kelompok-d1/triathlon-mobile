@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../constants.dart';
 import '../models/product_entry.dart';
 
 class ProductDetailPage extends StatelessWidget {
@@ -11,17 +13,21 @@ class ProductDetailPage extends StatelessWidget {
   String? get _imageUrl {
     if (product.thumbnail.isEmpty) return null;
     if (product.thumbnail.startsWith('http')) {
-      const proxyPath = '/proxy-image/?url=';
       if (product.thumbnail.contains('proxy-image')) {
         return product.thumbnail;
       }
-      return 'http://10.0.2.2:8000$proxyPath${Uri.encodeComponent(product.thumbnail)}';
+      return buildProxyImageUrl(product.thumbnail);
     }
     return product.thumbnail;
   }
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(product.name)),
       body: SingleChildScrollView(
@@ -79,45 +85,17 @@ class ProductDetailPage extends StatelessWidget {
                   );
                 }
                 return Text(
-                  'Rp${product.price}',
+                  currencyFormatter.format(product.price),
                   style: priceStyle,
                 );
               },
             ),
             const Divider(height: 32.0),
-            Builder(
-              builder: (_) {
-                // Show a dash whenever the backend omits the category field.
-                String categoryValue = product.category;
-                if (categoryValue.isEmpty) {
-                  categoryValue = '-';
-                }
-                return _DetailRow(label: 'Category', value: categoryValue);
-              },
-            ),
+            _DetailRow(label: 'Category', value: product.categoryLabel.isEmpty ? '-' : product.categoryLabel),
             _DetailRow(label: 'Stock', value: product.stock.toString()),
-            Builder(
-              builder: (_) {
-                // Convert the boolean flag into "Yes"/"No" text.
-                String featuredValue = 'No';
-                if (product.isFeatured) {
-                  featuredValue = 'Yes';
-                }
-                return _DetailRow(label: 'Featured', value: featuredValue);
-              },
-            ),
-            Builder(
-              builder: (_) {
-                // Owner ID can be null, so display a dash when it is missing.
-                final int? ownerId = product.userId;
-                String ownerIdValue;
-                if (ownerId == null) {
-                  ownerIdValue = '-';
-                } else {
-                  ownerIdValue = ownerId.toString();
-                }
-                return _DetailRow(label: 'Owner ID', value: ownerIdValue);
-              },
+            _DetailRow(
+              label: 'Seller',
+              value: product.sellerUsername ?? 'Unknown seller',
             ),
             const SizedBox(height: 16.0),
             Text(

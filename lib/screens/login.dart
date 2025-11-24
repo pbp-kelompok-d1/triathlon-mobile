@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Kosinduy YNWA Shop',
+                    'Triathlon Gear Hub',
                     style: TextStyle(
                       fontSize: 24.0,
                       fontWeight: FontWeight.bold,

@@ -22,21 +22,20 @@ class ItemCard extends StatelessWidget {
         // Aksi ketika kartu ditekan.
         // Area responsif terhadap sentuhan
         onTap: () {
-          // Memunculkan SnackBar ketika diklik
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-                content: Text("Kamu telah menekan tombol ${item.name}!")));
+            ..showSnackBar(
+              SnackBar(content: Text('Opening ${item.name}...')),
+            );
 
-          // Navigate ke route yang sesuai (tergantung jenis tombol)
           switch (item.name) {
-            case "Create Product":
+            case "List New Gear":
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ProductFormPage()),
               );
               break;
-            case "All Products":
+            case "All Gear":
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -44,7 +43,7 @@ class ItemCard extends StatelessWidget {
                 ),
               );
               break;
-            case "My Products":
+            case "My Gear":
               Navigator.push(
                 context,
                 MaterialPageRoute(

@@ -19,15 +19,15 @@ class MyHomePage extends StatelessWidget {
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
 
-  final String nama = "Muhammad Kaila Aidam Riyan"; //nama
-  final String npm = "2406404781"; //npm
-  final String kelas = "A"; //kelas
+   final String nama = "Muhammad Kaila Aidam Riyan"; //nama
+    final String npm = "2406404781"; //npm
+    final String kelas = "A"; //kelas
 
-   final List<ItemHomepage> items = const [
-    ItemHomepage("All Products", Icons.shopping_bag, Color(0xFF1E3A8A)), // Blue
-    ItemHomepage("My Products", Icons.inventory, Color(0xFF15803D)), // Green
-    ItemHomepage("Create Product", Icons.add_circle, Color(0xFFDC2626)), // Red
-  ];
+     final List<ItemHomepage> items = const [
+      ItemHomepage("All Gear", Icons.storefront, Color(0xFF1D4ED8)),
+      ItemHomepage("My Gear", Icons.inventory_2, Color(0xFF0F766E)),
+      ItemHomepage("List New Gear", Icons.add_circle, Color(0xFFF97316)),
+    ];
   
 @override
     Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         
         title: const Text(
-          'Kosinduy YNWA Shop',
+          'Triathlon Marketplace',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -85,8 +85,8 @@ class MyHomePage extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFFCE1126), // Liverpool Red
-                          const Color(0xFFCE1126).withValues(alpha: 0.8),
+                          const Color(0xFF1D4ED8),
+                          const Color(0xFF0EA5E9).withValues(alpha: 0.9),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -94,7 +94,7 @@ class MyHomePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFCE1126).withValues(alpha: 0.3),
+                          color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -117,8 +117,8 @@ class MyHomePage extends StatelessWidget {
                             ],
                           ),
                           child: const Icon(
-                            Icons.sports_soccer,
-                            color: Color(0xFFCE1126),
+                            Icons.sports_motorsports,
+                            color: Color(0xFF0EA5E9),
                             size: 32,
                           ),
                         ),
@@ -127,7 +127,7 @@ class MyHomePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Selamat Datang di',
+                              'Selamat datang di',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 14.0,
@@ -136,7 +136,7 @@ class MyHomePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 4.0),
                             const Text(
-                              'Kosinduy YNWA Shop',
+                              'Triathlon Gear Hub',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20.0,
