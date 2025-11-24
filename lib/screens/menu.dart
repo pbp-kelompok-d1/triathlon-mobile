@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 
 import '../widgets/left_drawer.dart';
 import '../widgets/product_card.dart';
@@ -134,6 +135,7 @@ class MyHomePage extends StatelessWidget {
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
+
                             const SizedBox(height: 4.0),
                             const Text(
                               'Triathlon Gear Hub',
@@ -156,6 +158,18 @@ class MyHomePage extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.shopping_cart),
+                    label: const Text('Go to Shop'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ShopPage()),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24.0),
