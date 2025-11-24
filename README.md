@@ -1,105 +1,171 @@
-# TUGAS 7 - Elemen Dasar Flutter
+<div align="center">
 
-## Jelaskan apa itu widget tree pada Flutter dan bagaimana hubungan parent-child (induk-anak) bekerja antar widget.
+# 🏊‍♂️🚴‍♂️🏃‍♂️ **TRIATHLON**  
+### _Integrated Triathlon Lifestyle Platform_
 
-Widget tree adalah struktur hierarki yang menggambarkan komposisi seluruh antarmuka pengguna dalam aplikasi Flutter. Setiap widget dapat memiliki widget lain sebagai child-nya, membentuk pohon (tree) yang dimulai dari widget root (biasanya MaterialApp atau CupertinoApp) hingga ke widget leaf (widget yang tidak memiliki child). Hubungan parent-child bekerja dengan prinsip komposisi: parent widget bertanggung jawab untuk merender child widget-nya dan mengontrol properti serta state yang diteruskan ke child melalui parameter constructor. Ketika ada perubahan pada state parent, Flutter akan merekonstruksi seluruh subtree dari widget tersebut dan child-nya untuk mencerminkan perubahan terbaru. Dalam proyek Kosinduy YNWA Shop, MyHomePage sebagai parent memiliki child berupa Scaffold, yang kemudian memiliki child AppBar dan body. Body berisi Padding, Column, Row, dan GridView yang secara hierarki membentuk struktur tampilan lengkap. ItemCard widget yang berada di dalam GridView merupakan child yang akan di-render berkali-kali sesuai dengan jumlah item dalam list.
+</div>
 
-## Sebutkan semua widget yang kamu gunakan dalam proyek ini dan jelaskan fungsinya.
+---
 
-Berikut adalah widget yang digunakan dalam proyek Kosinduy YNWA Shop beserta fungsinya. **MaterialApp** berfungsi sebagai widget root yang mengatur konfigurasi utama aplikasi termasuk tema, routing, dan title aplikasi. **Scaffold** menyediakan struktur dasar halaman dengan AppBar, body, dan mendukung floating action button jika diperlukan. **AppBar** menampilkan header atau judul aplikasi di bagian atas halaman dengan styling yang konsisten. **Text** menampilkan teks dengan berbagai styling seperti font, ukuran, warna, dan font weight sesuai kebutuhan. **Column** menyusun child widget secara vertikal dari atas ke bawah, memungkinkan layout yang teratur dalam arah vertikal. **Row** menyusun child widget secara horizontal dari kiri ke kanan, berguna untuk membuat layout samping-menyamping seperti InfoCard. **Padding** memberikan ruang kosong di sekitar child-nya dengan jarak yang dapat dikustomisasi. **SizedBox** memberikan ukuran tetap atau ruang kosong dengan dimensi spesifik, sering digunakan untuk spacing antar widget. **Center** menempatkan child widget di tengah-tengah parent-nya baik secara horizontal maupun vertikal. **Card** menampilkan konten dalam kartu dengan elevation dan shadow effect, digunakan untuk InfoCard agar lebih menonjol. **Container** adalah widget wrapper versatile yang memungkinkan styling, padding, decoration, dan sizing sekaligus. **GridView** menyusun child widget dalam bentuk grid dengan baris dan kolom yang dapat dikonfigurasi, digunakan untuk menampilkan tiga tombol menu dalam satu baris. **Material** memberikan material design properties seperti warna dan ripple effect pada widget yang dibungkusnya. **InkWell** menangkap user interaction (tap) dan menampilkan ripple effect saat disentuh, memberikan feedback visual yang baik. **Icon** menampilkan ikon dari material design library, digunakan untuk menampilkan icon shopping_bag, inventory, dan add_circle pada tombol menu.
+## 👥 **Anggota Kelompok**
+| Nama | NPM |
+|------|------|
+| Jarred Muhammad Raditya | 2406432425 |
+| Justin Dwitama Seniang | 2406406742 |
+| Muhammad Helmi Alfarissi | 2406402416 |
+| Muhammad Kaila Aidam Riyan | 2406404781 |
+| Randuichi Touya | 2406350021 |
+| Syakirah Zahra Dhawini | 2406353950 |
 
-## Apa fungsi dari widget MaterialApp? Jelaskan mengapa widget ini sering digunakan sebagai widget root.
+---
 
-MaterialApp adalah widget yang mengatur konfigurasi dan tema aplikasi secara global dengan standar Material Design. Fungsi utamanya adalah menyediakan Material Design theme dan styling yang konsisten di seluruh aplikasi, mengelola navigasi dan routing antar halaman melalui property home atau routes, mengatur title aplikasi yang ditampilkan di device switcher atau task manager, mengkonfigurasi locale dan bahasa aplikasi, serta menyediakan akses ke MediaQuery dan BuildContext untuk seluruh widget di bawahnya.
+## 🧭 **Deskripsi Aplikasi**
 
-Widget ini sering digunakan sebagai widget root karena beberapa alasan penting. Pertama, MaterialApp adalah entry point dari aplikasi Flutter yang mengeksekusi seluruh widget tree, tanpanya aplikasi tidak akan berjalan. Kedua, dengan menjadi root, MaterialApp memastikan konfigurasi tema dan navigasi berlaku secara global ke seluruh aplikasi, sehingga konsistensi desain terjaga di setiap halaman. Ketiga, MaterialApp menyediakan context dan akses ke resource global seperti theme data yang dibutuhkan oleh widget di bawahnya untuk mengakses warna dan styling. Dalam proyek ini, MaterialApp mengonfigurasi color scheme dengan warna Liverpool Football Club (red dan gold), sehingga semua widget dapat mengakses warna ini melalui Theme.of(context).
+Di tengah meningkatnya tren gaya hidup sehat dan popularitas olahraga ketahanan (endurance sports) seperti lari, sepeda, dan renang di Indonesia, muncul sebuah tantangan besar: **fragmentasi ekosistem digital.**
 
-## Jelaskan perbedaan antara StatelessWidget dan StatefulWidget. Kapan kamu memilih salah satunya?
+Data menunjukkan bahwa para pegiat olahraga ini seringkali harus berpindah-pindah platform untuk memenuhi kebutuhan mereka:
 
-Perbedaan utama antara StatelessWidget dan StatefulWidget terletak pada kemampuan mengelola state atau data yang dapat berubah. StatelessWidget adalah widget yang tidak memiliki state internal dan bersifat immutable atau tidak berubah, hanya menerima data dari parent melalui constructor dan menampilkannya. Ketika ingin memperbarui tampilan StatelessWidget, developer harus membuat instance baru dengan data yang berbeda. Sebaliknya, StatefulWidget adalah widget yang memiliki state internal yang dapat berubah dan dapat merespons perubahan tanpa membuat instance baru. StatefulWidget terdiri dari dua class: StatefulWidget dan State, di mana State menyimpan data yang dapat diubah serta memiliki method setState() untuk memicu rebuild ketika data berubah.
+> Perjalanan digital seorang atlet saat ini sangat terpecah-belah. Mereka memulai dengan aplikasi pelacak seperti Strava untuk mencatat setiap detail jarak dan durasi latihan. Untuk kebutuhan sosial, seperti berdiskusi dan mencari teman berlatih, mereka beralih ke media sosial layaknya Facebook. Saat membutuhkan peralatan baru, mereka harus membuka aplikasi e-commerce seperti Tokopedia atau Shopee. Bahkan untuk hal mendasar seperti memesan kolam renang atau stadion, mereka masih sering dihadapkan pada sistem pemesanan manual, membuktikan betapa tersebarnya semua kebutuhan mereka di berbagai platform yang berbeda.
 
-Dalam proyek Kosinduy YNWA Shop, MyHomePage, InfoCard, dan ItemCard menggunakan StatelessWidget karena data yang ditampilkan tidak berubah selama widget tersebut aktif. Data nama, npm, dan kelas bersifat statis dan tidak perlu diupdate, demikian juga dengan item menu yang selalu tetap. Kapan memilih masing-masing: gunakan StatelessWidget jika tampilan widget tidak berubah atau hanya bergantung pada data dari parent yang diteruskan melalui constructor. Gunakan StatefulWidget jika widget perlu mengelola state internal, merespons user input, atau memperbarui tampilan secara dinamis berdasarkan perubahan data tanpa tergantung pada parent widget. Sebagai contoh, jika di kemudian hari ingin menambahkan fitur filter atau sorting pada menu yang mengubah tampilan tanpa reload dari parent, maka MyHomePage sebaiknya diubah menjadi StatefulWidget.
+Fragmentasi ini menciptakan **inefisiensi** dan **memecah belah pengalaman pengguna.**  
+Seorang atlet harus mengelola banyak akun, komunitasnya tersebar, dan sulit menemukan semua yang dibutuhkan dalam satu tempat.
 
-## Apa itu BuildContext dan mengapa penting di Flutter? Bagaimana penggunaannya di metode build?
+**Triathlon** lahir sebagai solusi dari masalah ini. Aplikasi kami adalah **sebuah platform terintegrasi** yang dirancang khusus untuk komunitas olahraga ketahanan di Indonesia. Kami menyiapkan semua kebutuhan atlet dan para peminat olahraga—mulai dari **pelacakan aktivitas, interaksi komunitas, jual-beli perlengkapan, hingga pemesanan fasilitas**—ke dalam **satu ekosistem yang solid dan mudah diakses.**
 
-BuildContext adalah objek yang merepresentasikan lokasi widget dalam widget tree dan menyimpan informasi penting seperti parent widget, theme, media query, dan navigasi yang dapat diakses oleh widget. BuildContext sangat penting di Flutter karena memungkinkan widget mengakses informasi global dan melakukan operasi yang membutuhkan konteks aplikasi. Pertama, BuildContext memungkinkan widget mengakses tema global melalui Theme.of(context), seperti AppBar di proyek ini yang mengakses Theme.of(context).colorScheme.primary untuk mendapatkan warna merah Liverpool. Kedua, BuildContext memberikan akses ke ukuran layar dan informasi device melalui MediaQuery.of(context), digunakan pada InfoCard untuk menghitung lebar dengan MediaQuery.of(context).size.width / 3.5. Ketiga, BuildContext digunakan untuk navigasi antar halaman dengan Navigator.push() atau Navigator.pop(). Keempat, BuildContext diperlukan untuk menampilkan SnackBar atau dialog dengan ScaffoldMessenger.of(context), seperti pada ItemCard saat menampilkan pesan "Kamu telah menekan tombol...!".
+## 🧩 **Daftar Modul yang Akan Diimplementasikan**
 
-Penggunaan BuildContext di metode build adalah dengan menggunakannya sebagai parameter yang diteruskan otomatis, kemudian developer bisa menggunakannya untuk mengakses informasi global atau melakukan navigasi. Contohnya pada ItemCard saat user mengetuk tombol, ScaffoldMessenger.of(context) digunakan untuk menampilkan SnackBar dengan pesan yang mengandung nama item yang ditekan, memastikan pesan yang ditampilkan relevan dengan item mana yang user sentuh.
+### 1. 👤 User Profile & Authentication — _Helmi_
+Modul **User Profile** memungkinkan pengguna memiliki beberapa peran (_User, Seller, Facility Administrator_) dan melakukan **switch role** pada halaman profil. Tampilan data akan menyesuaikan role aktif:
 
-## Jelaskan konsep "hot reload" di Flutter dan bagaimana bedanya dengan "hot restart".
+- **User:** menampilkan aktivitas olahraga (Activities), forum post, dan review di Place Recommendation.  
+- **Seller:** menampilkan daftar produk yang dijual (Shop).  
+- **Facility Administrator:** menampilkan daftar fasilitas yang dikelola, opsi tambah fasilitas, serta daftar tiket pemesanan (Ticket).
 
-Hot Reload adalah fitur Flutter yang memungkinkan developer membuat perubahan pada kode dan langsung melihat hasilnya tanpa restart aplikasi atau kehilangan state. Proses hot reload hanya meng-inject kode yang berubah ke Dart VM yang sedang berjalan, sehingga sangat cepat, biasanya kurang dari 1 detik. State aplikasi tetap dipertahankan, sehingga jika user sudah navigasi ke halaman detail atau mengisi form, state tersebut tidak akan hilang setelah hot reload. Hot reload sangat berguna untuk development karena developer bisa bereksperimen dengan UI atau logic, misalnya mengubah warna tombol atau mengganti teks greeting, tanpa khawatir kehilangan progress atau harus mengulangi langkah sebelumnya untuk mencapai halaman yang sedang dikerjakan.
+Untuk dapat menghubungkan _backend_ django dengan _frontend_ flutter, modul **Authentication** dibuat. Modul ini berguna untuk melakukan register, login, logout pada aplikasi flutter melalui endpoint di django.
 
-Hot Restart adalah proses yang menghentikan seluruh aplikasi dan me-restart dari awal, namun tetap di dalam emulator atau device yang sama tanpa perlu rebuild APK lengkap. Berbeda dengan hot reload, hot restart akan mereset seluruh state aplikasi menjadi state awal seperti saat pertama kali app dijalankan. Hot restart diperlukan ketika hot reload tidak dapat menangani perubahan kode, misalnya ketika mengubah main() function, inisialisasi global variable, dependency yang complex, atau mengubah package yang diimport. 
+Selain itu, modul ini juga berpengaruh pada Profile View ketika pengguna lain melihat halaman profil seseorang: data yang ditampilkan tetap bergantung pada role aktif dari pemilik profil tersebut.
 
-Perbedaan signifikan antara keduanya adalah kecepatan di mana hot reload jauh lebih cepat daripada hot restart, serta penanganan state di mana hot reload mempertahankan state sedangkan hot restart mereset state. Untuk penggunaan, hot reload cocok digunakan untuk iterasi cepat selama development seperti styling dan fine-tuning UI, sedangkan hot restart digunakan untuk perubahan yang fundamental. Cara aktivasi juga berbeda: hot reload biasanya dengan shortcut `r` di terminal atau IDE, hot restart dengan shortcut `R`. Dalam pengembangan proyek Kosinduy YNWA Shop, hot reload sangat membantu ketika melakukan styling dengan mengubah warna Liverpool atau mengatur layout widget, sehingga hasilnya bisa dilihat langsung tanpa perlu rebuild aplikasi dari awal yang memakan waktu lebih lama.
+---
 
+### 2. 💬 Forum — _Aidam_
+Modul **Forum** memungkinkan user membuat, membaca, dan berinteraksi melalui **threads dan replies**, sistem diskusi terinspirasi Hypixel Forums.  
+Fitur utama:
+- Sistem **bumping otomatis** ketika ada balasan baru pada sebuah thread.
+- Pengguna dapat memfilter thread berdasarkan kategori, popularitas, dan filter lainnya.
 
-
-
-# TUGAS 8 - Flutter Navigation, Layouts, Forms, and Input Elements
-
-## Jelaskan perbedaan antara Navigator.push() dan Navigator.pushReplacement() pada Flutter. Dalam kasus apa sebaiknya masing-masing digunakan pada aplikasi Football Shop kamu?
-
-Perbedaan utama antara Navigator.push() dan Navigator.pushReplacement() terletak pada cara mereka mengelola navigation stack. Navigator.push() menambahkan halaman baru ke atas stack navigasi yang sudah ada, sehingga user dapat kembali ke halaman sebelumnya dengan tombol back atau Navigator.pop(). Sebaliknya, Navigator.pushReplacement() menggantikan halaman saat ini dengan halaman baru di stack navigasi, sehingga halaman sebelumnya dihapus dari stack dan user tidak dapat kembali ke halaman tersebut menggunakan tombol back.
-
-Dalam aplikasi Kosinduy YNWA, Navigator.push() digunakan ketika navigasi ke halaman form tambah produk (ProductFormPage) dari tombol "Create Product" pada halaman utama atau dari drawer. Hal ini memungkinkan user untuk kembali ke halaman utama setelah mengisi form atau jika ingin membatalkan proses penambahan produk. Navigator.pushReplacement() digunakan dalam drawer ketika user memilih "Home" atau "All Products", karena kita ingin menggantikan halaman saat ini dengan halaman utama tanpa menumpuk halaman yang sama di navigation stack. Penggunaan pushReplacement pada drawer mencegah terjadinya multiple instances dari halaman yang sama dan memberikan user experience yang lebih clean. Sebagai contoh, jika user berada di ProductFormPage dan memilih "Home" dari drawer, pushReplacement akan langsung mengganti form page dengan home page, bukan menambahkan home page di atas form page.
-
-## Bagaimana kamu memanfaatkan hierarchy widget seperti Scaffold, AppBar, dan Drawer untuk membangun struktur halaman yang konsisten di seluruh aplikasi?
-
-Hierarchy widget seperti Scaffold, AppBar, dan Drawer dimanfaatkan sebagai foundation untuk membangun struktur halaman yang konsisten di seluruh aplikasi Kosinduy YNWA Shop. Scaffold berfungsi sebagai kerangka utama setiap halaman yang menyediakan struktur dasar Material Design, termasuk slot untuk AppBar, body, drawer, dan floating action button. Dengan menggunakan Scaffold di setiap halaman (MyHomePage dan ProductFormPage), aplikasi memiliki struktur yang seragam dan predictable bagi user.
-
-AppBar diimplementasikan secara konsisten dengan konfigurasi yang sama di seluruh halaman: menggunakan warna Liverpool red (Color(0xFFCE1126)) sebagai backgroundColor, teks putih dengan fontWeight bold untuk title, dan foregroundColor white untuk ikon. Hal ini menciptakan identitas visual yang kuat dan membantu user mengenali bahwa mereka masih berada dalam aplikasi yang sama. Drawer (LeftDrawer) diintegrasikan ke dalam setiap Scaffold untuk menyediakan navigasi yang konsisten dan mudah diakses dari mana saja dalam aplikasi. Drawer menggunakan DrawerHeader dengan branding Kosinduy YNWA dan warna tema yang sama, diikuti dengan ListTile yang menyediakan navigasi ke berbagai bagian aplikasi. Dengan menempatkan const LeftDrawer() di setiap Scaffold, user dapat mengakses menu navigasi yang sama terlepas dari halaman mana mereka berada, menciptakan pengalaman navigasi yang intuitif dan konsisten. Pendekatan ini juga memudahkan maintenance karena perubahan pada AppBar atau Drawer dapat dilakukan secara terpusat dan otomatis terefleksi di seluruh aplikasi.
-
-## Dalam konteks desain antarmuka, apa kelebihan menggunakan layout widget seperti Padding, SingleChildScrollView, dan ListView saat menampilkan elemen-elemen form? Berikan contoh penggunaannya dari aplikasi kamu.
-
-Layout widget seperti Padding, SingleChildScrollView, dan ListView memberikan kelebihan signifikan dalam menampilkan elemen-elemen form dengan cara yang user-friendly dan responsive. Padding memberikan kontrol presisi terhadap ruang kosong di sekitar widget, menciptakan breathing space yang membuat form tidak terlihat cramped dan lebih mudah dibaca. SingleChildScrollView memungkinkan form untuk discroll ketika kontennya melebihi tinggi layar, sangat penting untuk form panjang atau ketika keyboard muncul. ListView menyediakan scrolling yang efficient untuk daftar item yang panjang dengan lazy loading.
-
-Dalam aplikasi Kosinduy YNWA, ketiga widget ini diimplementasikan secara strategis di ProductFormPage. Padding digunakan secara konsisten dengan EdgeInsets.all(8.0) untuk setiap field form (nama, harga, deskripsi, thumbnail, kategori, dan stock), memberikan spacing yang uniform dan menciptakan visual hierarchy yang jelas antara setiap elemen input. SingleChildScrollView membungkus seluruh Column yang berisi form fields, memungkinkan user untuk scroll ke atas dan bawah ketika form panjang atau ketika keyboard virtual muncul dan menyembunyikan sebagian form. Hal ini sangat penting untuk user experience karena semua field tetap dapat diakses terlepas dari ukuran layar device. Contoh implementasinya adalah Form widget yang dibungkus SingleChildScrollView, kemudian di dalamnya terdapat Column dengan children berupa Padding widgets yang masing-masing berisi TextFormField. Struktur ini memastikan bahwa form dapat digunakan dengan nyaman di berbagai ukuran layar dan orientasi, sambil tetap mempertahankan konsistensi visual melalui padding yang seragam.
-
-## Bagaimana kamu menyesuaikan warna tema agar aplikasi Football Shop memiliki identitas visual yang konsisten dengan brand toko?
-
-Penyesuaian warna tema untuk menciptakan identitas visual yang konsisten dengan brand Liverpool Football Club dilakukan melalui konfigurasi ColorScheme di MaterialApp dan penggunaan warna yang consistent di seluruh komponen aplikasi. Dalam main.dart, tema aplikasi dikonfigurasi dengan ColorScheme.fromSeed yang menggunakan seedColor Liverpool red (Color(0xFFCE1126)) sebagai warna utama, dengan primary color yang sama untuk memastikan konsistensi, dan secondary color menggunakan Liverpool gold (Color(0xFFFDB913)) untuk aksen. Surface color diset ke Colors.white untuk background yang clean, sementara onPrimary dan onSecondary color diatur untuk memastikan kontras text yang optimal.
-
-Implementasi tema ini kemudian diterapkan secara konsisten di seluruh aplikasi melalui Theme.of(context). AppBar di setiap halaman menggunakan Theme.of(context).colorScheme.primary untuk backgroundColor, memastikan semua header memiliki warna Liverpool red yang signature. DrawerHeader juga menggunakan warna yang sama (Color(0xFFCE1126)) untuk menciptakan kontinuitas visual. Untuk komponen form di ProductFormPage, ElevatedButton menggunakan MaterialStateProperty.all(Color(0xFFCE1126)) untuk mempertahankan konsistensi warna brand. Tombol-tombol pada halaman utama (ItemCard) menggunakan warna individual yang kontras namun tetap harmonis: biru untuk "All Products", hijau untuk "My Products", dan merah untuk "Create Product", memberikan visual distinction sambil tetap mempertahankan professional appearance. Pendekatan ini memastikan bahwa identity Liverpool Football Club terefleksi dengan kuat melalui penggunaan warna signature merah di elemen-elemen kunci seperti AppBar, drawer, dan action buttons, dengan tetap mempertahankan user experience dengan kontras warna yang baik dan hierarchy visual yang jelas.
+Fungsionalitas per peran:
+- **User:** dapat membuat thread baru, membalas thread, melakukan edit atau delete pada post miliknya, serta memberi upvote/downvote pada thread atau balasan. 
+- **Admin:** memiliki kemampuan moderasi seperti menghapus thread, mengunci diskusi, atau menandai thread tertentu sebagai pinned.
 
 
+**Implementasi MVT Django:**
+- **Model:**  Menyimpan data thread, reply, category dan upvote/downvote. Setiap thread memiliki atribut seperti judul, isi, pembuat, waktu dibuat, waktu terakhir dibalas, jumlah upvote/downvote, serta relasi ke kategori. Reply menyimpan isi balasan, pengirim, dan waktu. Field last_activity pada thread akan diperbarui setiap kali ada balasan baru untuk mendukung mekanisme thread dengan aktivitas terakhir di atas.  
+- **View:** Mengelola logika untuk menampilkan daftar thread yang otomatis diurutkan berdasarkan recent activity, menampilkan detail thread beserta balasannya, memproses pembuatan, pengeditan, dan penghapusan thread atau reply, dan menangani upvote/downvote serta filtering.
+- **Template:**  Menyediakan tampilan halaman utama forum dengan daftar thread yang bisa difilter. Halaman detail thread dengan daftar balasan secara hierarkis. Formulir untuk membuat thread baru dan membalas thread. Tombol interaksi seperti reply, edit, delete, upvote/downvote, dan filter dropdown.
 
+---
 
-# TUGAS 9 
+### 3. 🛒 Shop — _Jarred_
+Modul **Shop** memungkinkan pengguna berperan sebagai:
+- **User:** melihat-lihat katalog, memasukkan produk ke keranjang, memasukkan produk ke wishlist dan melakukan pembelian.
+- **Seller:** menambahkan produk, mengedit produk, dan menghapus produk.  
+- **Admin:** menghapus produk dari semua user.
 
-## Jelaskan mengapa kita perlu membuat model Dart saat mengambil/mengirim data JSON? Apa konsekuensinya jika langsung memetakan Map<String, dynamic> tanpa model (terkait validasi tipe, null-safety, maintainability)?
+**Implementasi MVT Django:**
+- **Model:** Menyimpan nama, harga, stok, category, thumbnail, description dari produk.
+- **View:** Mengelola logika untuk menampilkan produk-produk yang dijual oleh masing-masing pengguna dan juga pengguna dapat melakukan aksi jual beli.  
+- **Template:** Menyediakan interface untuk menampilkan semua produk, menambahkan produk, mengedit produk, menghapus produk, melakukan pembelian.
+---
 
-Model Dart seperti ProductEntry membuat setiap field hasil JSON punya tipe yang jelas (int, String, bool, dan sebagainya) sekaligus fallback yang konsisten ketika backend mengirim nilai kosong atau tipe yang melenceng. Parsing hanya terjadi di satu tempat melalui fromJson/toJson sehingga pengecekan null, konversi angka, dan logika default tidak tersebar ke banyak widget. Kalau langsung memakai Map<String, dynamic>, validasi tipe berpindah ke setiap lokasi pemakaian sehingga rawan TypeError, null-safety sulit dijaga karena map bisa mengembalikan null kapan saja, dan maintainability turun karena setiap perubahan API memaksa kita merapikan banyak file sekaligus. Dengan model, perubahan cukup di satu berkas dan IDE bisa membantu mendeteksi field yang belum dipetakan.
+### 4. 🏃 Activities — _Touya_
+Modul **Activities** memungkinkan pengguna untuk menyimpan data kegiatan olahraga mereka dalam aplikasi. Kegiatan tersebut disimpan pribadi setiap user pada page khusus, mirip user profile. Pada page ini, user dapat melihat kegiatan mereka sebelumnya, me-log aktivitas baru, dan melihat data aktivitas lebih rinci.
 
-## Apa fungsi package http dan CookieRequest dalam tugas ini? Jelaskan perbedaan peran http vs CookieRequest.
+---
 
-Package http adalah klien umum untuk melakukan GET atau POST tanpa perlu menyimpan state session. Pada tugas ini saya lebih banyak memakai CookieRequest dari pbp_django_auth karena ia memanfaatkan http di balik layar lalu otomatis mengelola cookie, CSRF token, serta menyediakan helper login, register, dan logout. Jadi http cocok ketika ingin memukul API publik yang tidak butuh autentikasi, sedangkan CookieRequest dipakai untuk seluruh endpoint Django yang membutuhkan session agar setiap permintaan membawa cookie dan status login tetap tersimpan.
+### 5. 🎫 Ticket — _Syakirah_
+Modul Tiket adalah sebuah sistem terintegrasi yang dirancang untuk menyederhanakan proses pemesanan tiket masuk ke berbagai fasilitas olahraga. Modul ini menjembatani kebutuhan pengguna untuk mendapatkan akses yang mudah dan cepat, dengan kebutuhan administrator fasilitas untuk mengelola pesanan secara efisien dan terorganisir.
+Fungsionalitas modul ini sebagai berikut:
+- **User:** dapat dengan mudah mencari fasilitas olahraga yang diinginkan, memeriksa ketersediaan jadwal secara real-time, dan melakukan pemesanan tiket untuk tanggal serta waktu spesifik.
+- **Administrator:** dapat memantau semua transaksi secara real-time melalui dashboard, melihat detail setiap pemesanan, dan melacak pendapatan dengan mudah.
 
-## Jelaskan mengapa instance CookieRequest perlu untuk dibagikan ke semua komponen di aplikasi Flutter.
+---
 
-CookieRequest menyimpan state login di dalam instansenya. Jika setiap layar membuat objek sendiri, session akan hilang dan pengguna dipaksa login ulang saat berpindah halaman. Karena itu saya menaruh Provider<CookieRequest> di main.dart lalu mengambilnya lewat context.watch pada setiap screen yang butuh akses server. Login yang dilakukan pada LoginPage otomatis bisa dipakai oleh LeftDrawer, ProductFormPage, maupun ProductListPage tanpa mengirim ulang kredensial. Berbagi instance juga memudahkan ketika ingin logout atau membaca jsonData (misalnya untuk menampilkan username di menu).
+### 6. 📍 Place — _Justin_
+Modul Place memungkinkan pengguna untuk melihat berbagai rekomendasi tempat latihan yang tersedia. Fungsionalitas utamanya adalah:
+Fungsionalitas:
+- **User:** mencari tempat, melihat detail, memesan, memberi rating dan ulasan.  
+- **Facility Administrator:** mendaftarkan fasilitas olahraganya, mengelola halaman informasi tempat dan memantau data pemesanan yang masuk.
 
-## Jelaskan konfigurasi konektivitas yang diperlukan agar Flutter dapat berkomunikasi dengan Django. Mengapa kita perlu menambahkan 10.0.2.2 pada ALLOWED_HOSTS, mengaktifkan CORS dan pengaturan SameSite/cookie, dan menambahkan izin akses internet di Android? Apa yang akan terjadi jika konfigurasi tersebut tidak dilakukan dengan benar?
+---
 
-Emulator Android melihat host machine sebagai 10.0.2.2 sehingga alamat tersebut harus dimasukkan ke ALLOWED_HOSTS supaya Django tidak menolak request. Karena Flutter berjalan di origin berbeda, CORS perlu mengizinkan origin itu dan cookie harus diatur ke SameSite=None (serta Secure) agar session bisa dikirim silang domain. Di sisi aplikasi, AndroidManifest perlu izin INTERNET agar emulator boleh menjangkau jaringan. Jika salah satu konfigurasi ini absen, hasilnya bisa berupa koneksi gagal total (tidak ada izin internet), permintaan ditolak Django (ALLOWED_HOSTS atau CORS salah), atau login tidak pernah tersimpan karena cookie tidak ikut terkirim.
+## 🧑‍💻 **Role atau Aktor Pengguna**
 
-## Jelaskan mekanisme pengiriman data mulai dari input hingga dapat ditampilkan pada Flutter.
+| Role | Deskripsi |
+|------|------------|
+| **User** | Membuat dan mengedit Profile, melihat dan berbagi informasi di Forum, memantau aktivitas di Activities, melihat dan membeli perlengkapan di Shop, membeli tiket masuk fasilitas olahraga di Ticket, melihat rekomendasi tempat di Place Recommendation.|
+| **Admin** | Memantau dan mengelola seluruh aktivitas aplikasi, moderasi Forum, mengelola data profile, memastikan modul Shop, Ticket, dan Place Recommendation berjalan lancar. |
+| **Seller** | Menjual perlengkapan olahraga melalui modul Shop, mengelola produk (menambah, mengedit, dan menghapus), melihat pesanan. |
+| **Facility Administrator** | Menyediakan tiket masuk fasilitas olahraga, mengelola profile tempat, melihat daftar pembeli tiket, memasukkan tempat ke dalam Place Recommendation. |
 
-Pengguna mengisi form di ProductFormPage. Setelah validasi lokal lolos, seluruh nilai dikumpulkan ke map lalu diubah menjadi JSON string sebelum dikirim lewat CookieRequest.postJson menuju endpoint create-flutter di Django. Server mem-parsing payload, membuat objek Product, menyimpannya, lalu mengirim balasan berisi status serta data produk yang baru dibuat. Jika status sukses, Flutter mereset form dan menawarkan navigasi ke daftar produk. Halaman produk kemudian memanggil json atau json/user, mengubah array JSON menjadi List<ProductEntry>, dan menampilkannya melalui ListView serta halaman detail.
+---
 
-## Jelaskan mekanisme autentikasi dari login, register, hingga logout. Mulai dari input data akun pada Flutter ke Django hingga selesainya proses autentikasi oleh Django dan tampilnya menu pada Flutter.
+## 🔌 **Alur Pengintegrasian** 
+Aplikasi mobile ini beroperasi sebagai client yang mengambil dan mengirim data ke proyek web (_backend_) yang telah dibuat sebelumnya. Komunikasi data dilakukan melalui REST API dengan format response JSON.
 
-Pada register, Flutter mengirim username, password1, dan password2 ke endpoint auth/register. Django memvalidasi, membuat User baru, lalu mengembalikan status sehingga Flutter bisa kembali ke halaman login. Saat login, Flutter memanggil request.login ke auth/login; CookieRequest menyimpan cookie session yang diberikan Django (melalui auth_login). Begitu statusnya sukses, aplikasi menampilkan Snackbar sambutan dan mengganti layar ke MyHomePage. Selama session hidup, setiap request berikutnya membawa cookie sehingga endpoint json/user tahu siapa yang meminta. Logout dilakukan lewat request.logout ke auth/logout; Django menjalankan auth_logout, menghapus session, dan Flutter mengosongkan stack ke LoginPage sehingga menu hanya muncul jika request.loggedIn bernilai true.
+### **1. Mekanisme Autentikasi dan Session**
 
-## Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step! (bukan hanya sekadar mengikuti tutorial).
+Saat pengguna login di aplikasi mobile, aplikasi akan mengirim request ke server berisi kredensial pengguna.
+Jika kredensial valid, server akan mengembalikan cookies atau token autentikasi.
+Aplikasi mobile kemudian menyimpan informasi session tersebut secara lokal. Penyimpanan dapat menggunakan package seperti pbp_django_auth atau provider terkait.
+Selama session masih tersimpan dan valid, pengguna tidak perlu login ulang setiap kali berpindah halaman atau ketika melakukan request yang membutuhkan otorisasi seperti memposting di forum atau melakukan booking tiket.
 
-Langkah yang saya lakukan:
-1. **Siapkan backend** – Menambah endpoint JSON seperti show_json, show_json_user, create_product_flutter, dan proxy_image, plus view autentikasi khusus di authentication/views.py. Semua konfigurasi ALLOWED_HOSTS, CORS, dan cookie dipastikan cocok dengan emulator.
-2. **Konfigurasi Flutter** – Menambahkan dependency pbp_django_auth, membuat constants.dart untuk base URL lintas platform, lalu membungkus aplikasi dengan Provider<CookieRequest> agar instance tersedia di seluruh widget tree.
-3. **Bangun layar autentikasi** – Mengimplementasikan LoginPage dan RegisterPage dengan form sederhana, validasi dasar, serta Snackbar untuk menampilkan pesan backend. Navigasi sukses diarahkan ke MyHomePage.
-4. **Integrasi navigasi/menu** – Memperbarui LeftDrawer, MyHomePage, dan ItemCard supaya semua rute (beranda, daftar produk, form) saling terhubung dan aksi logout memanfaatkan CookieRequest yang sama.
-5. **Model dan daftar produk** – Membuat ProductEntry, ProductListPage, serta ProductDetailPage. Endpoint json dipanggil melalui CookieRequest.get, hasilnya dipetakan ke model, lalu ditampilkan dalam ListView dengan kartu detail.
-6. **Form produk dan dialog** – ProductFormPage memvalidasi input, mengirim JSON ke create-flutter, lalu memunculkan dialog pilihan (tetap di form atau pergi ke daftar). Dialog memakai Navigator.push agar pengguna bisa kembali ke form bila perlu.
+### **2. Pengambilan Data (Data Fetching)**
 
-Seluruh tahapan di atas saya jalankan secara berurut: mulai dari backend, lanjut ke autentikasi Flutter, kemudian fetching data, dan form submission.
+Untuk menampilkan daftar data seperti daftar tempat olahraga (List Places), katalog produk, atau thread forum, aplikasi mobile melakukan request GET secara asynchronous ke endpoint API yang sesuai.
+Response dari server berupa data JSON.
+Data JSON ini kemudian diparsing menjadi objek model di Flutter.
+Objek model tersebut digunakan untuk membangun dan menampilkan tampilan antarmuka (UI) di aplikasi mobile.
+
+### **3. Pengiriman Data (Data Submission)**
+
+Saat pengguna mengisi formulir, misalnya untuk membuat thread baru, menulis ulasan, atau menambah produk, data input dari pengguna akan dikumpulkan dan dikemas dalam format JSON.
+Aplikasi kemudian mengirim data tersebut ke server menggunakan method POST ke endpoint API yang relevan.
+Jika server mengembalikan status sukses, aplikasi akan menyesuaikan tampilan. Contohnya, aplikasi dapat memuat ulang daftar data terkait atau mengarahkan pengguna kembali ke halaman tertentu seperti halaman daftar ulasan.
+
+### **4. Keterhubungan Antar Modul (Foreign Key)**
+
+Relasi data antar modul diatur di sisi backend. Aplikasi mobile mengirimkan ID yang diperlukan sehingga backend dapat mencatat hubungan tersebut di database.
+Contoh keterhubungan modul:
+
+#### 🎫 Ticket dan Place
+Saat pengguna memesan tiket, aplikasi akan mengirim ID tempat (Place ID) dan ID pengguna ke backend.
+Backend mencatat pemesanan tersebut di database sehingga riwayat tiket dapat dikelola dengan benar.
+
+#### 🚴 Activities dan Place
+Fitur log activity mengambil referensi dari modul Place.
+Pengguna hanya dapat memilih lokasi olahraga yang valid dan sudah terdaftar di sistem.
+
+#### 💬 Forum dan Place
+Saat pengguna membuat forum baru terkait suatu tempat, aplikasi mengirimkan ID tempat yang sedang dibahas serta ID pengguna ke backend.
+Dengan cara ini, diskusi di forum dapat ditampilkan secara spesifik di halaman detail tempat olahraga yang bersangkutan.
+
+---
+## 🔗 **Tautan Penting**
+
+🏃‍♀️ **Sprint**
+[Link Sheets](https://docs.google.com/spreadsheets/d/1wv4zPaE6LCFSGGPjezmJt8sShTBBssdVITUtwUqTJIo/edit?gid=1588075117#gid=1588075117)
+
+🌐 **Deployment (PWS):**  
+[Link Deployment](https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id/)
+
+🎨 **Figma Design:**  
+[Figma Canvas Design](https://www.figma.com/design/4N2nIU7CkaN1RpViD1iRxu/Triathlon-Mobile?node-id=1-15&t=BzFDQnV09evDWk60-1)
+
+---
+
+<div align="center">
+
+✨ _Where athletes connect, grow, and go further together._ 💪  
+Proudly Present by **Team D1**
+
+</div>
