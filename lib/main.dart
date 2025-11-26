@@ -14,9 +14,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  return Provider<CookieRequest>(
+  return Provider(
       // Provide one CookieRequest globally for authentication + API state.
-      create: (_) => CookieRequest(),
+      create: (_) {
+        CookieRequest request = CookieRequest();
+        return request;
+      },
       child: MaterialApp(
         title: 'Kosinduy YNWA Shop',
         debugShowCheckedModeBanner: false,
