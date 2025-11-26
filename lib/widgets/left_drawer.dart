@@ -7,6 +7,7 @@ import '../screens/login.dart';
 import '../screens/menu.dart';
 import '../screens/product_form.dart';
 import '../screens/product_list.dart';
+import '../forum/screens/forum_list.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -90,6 +91,18 @@ class LeftDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ProductFormPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.forum),
+            title: const Text('Forum'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ForumListPage(),
                 ),
               );
             },

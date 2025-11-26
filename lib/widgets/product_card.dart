@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/menu.dart';
 import '../screens/product_form.dart';
 import '../screens/product_list.dart';
+import '../forum/screens/forum_list.dart';
 
 class ItemCard extends StatelessWidget {
   // Menampilkan kartu dengan ikon dan nama.
@@ -49,6 +50,12 @@ class ItemCard extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => const ProductListPage(mode: ProductListMode.mine),
                 ),
+              );
+              break;
+            case "Forum":
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ForumListPage()),
               );
               break;
             default:

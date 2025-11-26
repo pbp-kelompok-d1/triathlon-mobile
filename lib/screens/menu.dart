@@ -27,6 +27,7 @@ class MyHomePage extends StatelessWidget {
       ItemHomepage("All Gear", Icons.storefront, Color(0xFF1D4ED8)),
       ItemHomepage("My Gear", Icons.inventory_2, Color(0xFF0F766E)),
       ItemHomepage("List New Gear", Icons.add_circle, Color(0xFFF97316)),
+      ItemHomepage("Forum", Icons.forum, Color(0xFF7C3AED)),
     ];
   
 @override
