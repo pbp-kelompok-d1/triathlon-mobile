@@ -44,7 +44,7 @@ class Cart {
     'user': userId,
     'created_at': createdAt.toIso8601String(),
     'items': items
-        .map((e) => e.toJson(embedProduct: embedItems))
+        //.map((e) => e.toJson(embedProduct: embedItems))
         .toList(),
   };
 }

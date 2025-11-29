@@ -2,14 +2,14 @@
 import 'dart:convert';
 
 class Product {
-  final String id; // UUID
+  final String id;
   final String? sellerUsername;
   final String name;
   final String description;
   final double price;
   final int stock;
-  final String category; // running | cycling | swimming | other
-  final String thumbnail; // URL or asset path (may be empty)
+  final String category;
+  final String thumbnail;
 
   const Product({
     required this.id,
@@ -52,9 +52,22 @@ class Product {
       return int.tryParse(v.toString()) ?? fallback;
     }
 
+    // Handle seller username from multiple possible backend formats
+    String? parseSeller(dynamic raw) {
+      if (raw == null) return null;
+      if (raw is String) return raw;
+      if (raw is Map) {
+        final val = raw['username'];
+        return val is String ? val : null;
+      }
+      return null;
+    }
+
+    final sellerField = json['seller_username'] ?? json['seller'];
+
     return Product(
       id: (json['id'] ?? '').toString(),
-      sellerUsername: json['seller_username'] as String?,
+      sellerUsername: parseSeller(sellerField),
       name: (json['name'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
       price: parsePrice(json['price']),
@@ -66,7 +79,9 @@ class Product {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    // Keep both keys if you ever send back; adjust as needed.
     'seller_username': sellerUsername,
+    'seller': sellerUsername,
     'name': name,
     'description': description,
     'price': price,
@@ -76,7 +91,7 @@ class Product {
   };
 }
 
-// Parse a JSON string representing a list of products.
+// dart
 List<Product> productFromJson(String str) {
   final dynamic data = json.decode(str);
   if (data is List) {
@@ -88,5 +103,6 @@ List<Product> productFromJson(String str) {
   return const <Product>[];
 }
 
+// dart
 String productListToJson(List<Product> data) =>
     json.encode(data.map((e) => e.toJson()).toList());

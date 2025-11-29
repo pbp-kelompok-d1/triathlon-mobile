@@ -1,44 +1,64 @@
-import './product.dart';
+import 'dart:convert';
+
+List<CartItem> cartItemsFromJson(String str) =>
+    List<CartItem>.from(json.decode(str).map((x) => CartItem.fromJson(x)));
 
 class CartItem {
-  final int? id;
-  final Product product;
+  final int itemId;
+  final String productId;
+  final String name;
+  final double price;
   final int quantity;
+  final double subtotal;
+  final String thumbnail;
+  final int stock;
 
-  const CartItem({
-    this.id,
-    required this.product,
+  CartItem({
+    required this.itemId,
+    required this.productId,
+    required this.name,
+    required this.price,
     required this.quantity,
+    required this.subtotal,
+    required this.thumbnail,
+    required this.stock,
   });
 
-  double get subtotal => product.price * quantity;
+  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
+    itemId: json["item_id"] ?? 0,
+    productId: json["product_id"] ?? "",
+    name: json["name"] ?? "",
+    price: (json["price"] ?? 0).toDouble(),
+    quantity: json["quantity"] ?? 0,
+    subtotal: (json["subtotal"] ?? 0).toDouble(),
+    thumbnail: json["thumbnail"] ?? "",
+    stock: json["stock"] ?? 0,
+  );
+}
 
-  factory CartItem.fromJson(Map<String, dynamic> json) {
-    final p = json['product'];
-    final Product prod = p is Map<String, dynamic>
-        ? Product.fromJson(p)
-        : Product(
-      id: (p ?? '').toString(),
-      sellerUsername: null,
-      name: '',
-      description: '',
-      price: 0,
-      stock: 0,
-      category: 'other',
-      thumbnail: '',
-    );
-    return CartItem(
-      id: json['id'] as int?,
-      product: prod,
-      quantity: (json['quantity'] is int)
-          ? json['quantity'] as int
-          : int.tryParse('${json['quantity']}') ?? 1,
-    );
-  }
+class CartResponse {
+  final String status;
+  final int? cartId;
+  final List<CartItem> items;
+  final double total;
+  final String? message;
 
-  Map<String, dynamic> toJson({bool embedProduct = false}) => {
-    'id': id,
-    'product': embedProduct ? product.toJson() : product.id,
-    'quantity': quantity,
-  };
+  CartResponse({
+    required this.status,
+    this.cartId,
+    required this.items,
+    required this.total,
+    this.message,
+  });
+
+  factory CartResponse.fromJson(Map<String, dynamic> json) => CartResponse(
+    status: json["status"] ?? "",
+    cartId: json["cart_id"],
+    items: json["items"] != null
+        ? List<CartItem>.from(
+        json["items"].map((x) => CartItem.fromJson(x)))
+        : [],
+    total: (json["total"] ?? 0).toDouble(),
+    message: json["message"],
+  );
 }
