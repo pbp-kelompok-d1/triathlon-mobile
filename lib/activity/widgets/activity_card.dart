@@ -3,6 +3,7 @@ import 'package:triathlon_mobile/activity/models/activity_model.dart';
 import 'package:triathlon_mobile/activity/screens/activity_form.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 class ActivityCard extends StatelessWidget {
   final Activity activity;
