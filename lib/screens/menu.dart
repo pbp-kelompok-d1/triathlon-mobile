@@ -113,7 +113,7 @@ class MyHomePage extends StatelessWidget {
 
                             const SizedBox(height: 4.0),
                             const Text(
-                              'Triathlon Gear Hub',
+                              'Triathlon',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20.0,

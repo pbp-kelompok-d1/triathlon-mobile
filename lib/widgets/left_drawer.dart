@@ -7,6 +7,8 @@ import 'package:triathlon_mobile/screens/login.dart';
 import 'package:triathlon_mobile/screens/menu.dart';
 import '../forum/screens/forum_list.dart';
 import '../ticket/screens/ticket_list_page.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
+import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -56,6 +58,30 @@ class LeftDrawer extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => MyHomePage(),
                   ));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.nordic_walking_sharp),
+            title: const Text('Activity'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ActivityMenu(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopify_sharp),
+            title: const Text('Shop'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ShopPage(),
+                ),
+              );
             },
           ),
           ListTile(
