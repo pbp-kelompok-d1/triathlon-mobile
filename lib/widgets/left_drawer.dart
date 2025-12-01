@@ -6,6 +6,7 @@ import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/screens/login.dart';
 import 'package:triathlon_mobile/screens/menu.dart';
 import '../forum/screens/forum_list.dart';
+import '../ticket/screens/ticket_list_page.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -65,6 +66,18 @@ class LeftDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ForumListPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.confirmation_num),
+            title: const Text('My Tickets'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TicketListPage(),
                 ),
               );
             },

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/login.dart';
+import 'screens/onboarding_page.dart';
 
 void main() {
   // Bootstraps the app with the shared CookieRequest client so every screen can hit Django.
@@ -21,12 +21,12 @@ class MyApp extends StatelessWidget {
         return request;
       },
       child: MaterialApp(
-        title: 'Kosinduy YNWA Shop',
+        title: 'Triathlon App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFCE1126),
-            primary: const Color(0xFFCE1126),
+            seedColor: const Color(0xFF433BFF),
+            primary: const Color(0xFF433BFF),
             secondary: const Color(0xFFFDB913),
             surface: Colors.white,
             onPrimary: Colors.white,
@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const LoginPage(),
+        home: const OnboardingPage(),
       ),
     );
   }
