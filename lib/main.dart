@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:triathlon_mobile/screens/place_list_screen.dart';
+import 'screens/login.dart';
 
 import 'screens/onboarding_page.dart';
 
