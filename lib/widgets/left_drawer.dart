@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-import '../constants.dart';
-import '../screens/login.dart';
-import '../screens/menu.dart';
-import '../screens/product_form.dart';
-import '../screens/product_list.dart';
+import 'package:triathlon_mobile/constants.dart';
+import 'package:triathlon_mobile/screens/login.dart';
+import 'package:triathlon_mobile/screens/menu.dart';
+import '../forum/screens/forum_list.dart';
+import '../ticket/screens/ticket_list_page.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
+import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -26,7 +28,7 @@ class LeftDrawer extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'Triathlon Gear Hub',
+                  'Triathlon',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -54,42 +56,54 @@ class LeftDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const MyHomePage(),
+                    builder: (context) => MyHomePage(),
                   ));
             },
           ),
           ListTile(
-            leading: const Icon(Icons.shopping_bag),
-            title: const Text('All Gear'),
+            leading: const Icon(Icons.nordic_walking_sharp),
+            title: const Text('Activity'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.all),
+                  builder: (context) => const ActivityMenu(),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.inventory_2),
-            title: const Text('My Gear'),
+            leading: const Icon(Icons.shopify_sharp),
+            title: const Text('Shop'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.mine),
+                  builder: (context) => const ShopPage(),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.add_circle),
-            title: const Text('List New Gear'),
+            leading: const Icon(Icons.forum),
+            title: const Text('Forum'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ForumListPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.confirmation_num),
+            title: const Text('My Tickets'),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductFormPage(),
+                  builder: (context) => const TicketListPage(),
                 ),
               );
             },
