@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-import '../constants.dart';
-import '../screens/login.dart';
-import '../screens/menu.dart';
-import '../screens/product_form.dart';
-import '../screens/product_list.dart';
+import 'package:triathlon_mobile/constants.dart';
+import 'package:triathlon_mobile/screens/login.dart';
+import 'package:triathlon_mobile/screens/menu.dart';
 import '../forum/screens/forum_list.dart';
 
 class LeftDrawer extends StatelessWidget {
@@ -27,7 +25,7 @@ class LeftDrawer extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'Triathlon Gear Hub',
+                  'Triathlon',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -55,44 +53,8 @@ class LeftDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const MyHomePage(),
+                    builder: (context) => MyHomePage(),
                   ));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.shopping_bag),
-            title: const Text('All Gear'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.all),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.inventory_2),
-            title: const Text('My Gear'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.mine),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.add_circle),
-            title: const Text('List New Gear'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProductFormPage(),
-                ),
-              );
             },
           ),
           ListTile(
