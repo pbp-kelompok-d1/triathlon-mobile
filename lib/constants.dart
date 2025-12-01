@@ -5,8 +5,8 @@ const String _androidUrl = 'http://10.0.2.2:8000';
 const String _defaultUrl = 'http://127.0.0.1:8000';
 const String _pwsUrl = 'https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id';
 
-// Flip this at build time with: flutter run --dart-define=USE_PWS=true
-const bool _usePwsUrl = bool.fromEnvironment('USE_PWS', defaultValue: false);
+// Flip this at build time with: flutter run --dart-define=USE_PWS=false (to use local)
+const bool _usePwsUrl = bool.fromEnvironment('USE_PWS', defaultValue: true);
 
 String get baseUrl {
 	if (_usePwsUrl) {

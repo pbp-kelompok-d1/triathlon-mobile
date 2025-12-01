@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/screens/login.dart';
 import 'package:triathlon_mobile/screens/menu.dart';
+import '../forum/screens/forum_list.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -54,6 +55,18 @@ class LeftDrawer extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => MyHomePage(),
                   ));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.forum),
+            title: const Text('Forum'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ForumListPage(),
+                ),
+              );
             },
           ),
           const Divider(),
