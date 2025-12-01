@@ -37,4 +37,19 @@ class WishlistService {
     }
     return {'success': false, 'message': 'Failed to toggle wishlist'};
   }
+
+  Future<bool> isInWishlist(String productId) async {
+    try {
+      final url = '$baseUrl/shop/api/wishlist/check/$productId/';
+      final response = await request.get(url);
+
+      if (response is Map<String, dynamic>) {
+        return response['in_wishlist'] ?? false;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
 }
