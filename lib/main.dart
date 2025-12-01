@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/screens/place_list_screen.dart';
 import 'screens/login.dart';
 
+import 'screens/onboarding_page.dart';
+
 void main() {
   // Bootstraps the app with the shared CookieRequest client so every screen can hit Django.
   runApp(const MyApp());
@@ -21,12 +23,12 @@ class MyApp extends StatelessWidget {
         return request;
       },
       child: MaterialApp(
-        title: 'Kosinduy YNWA Shop',
+        title: 'Triathlon App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFCE1126),
-            primary: const Color(0xFFCE1126),
+            seedColor: const Color(0xFF433BFF),
+            primary: const Color(0xFF433BFF),
             secondary: const Color(0xFFFDB913),
             surface: Colors.white,
             onPrimary: Colors.white,
@@ -34,7 +36,7 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const PlaceListScreen(),
+        home: const OnboardingPage(),
       ),
     );
   }
