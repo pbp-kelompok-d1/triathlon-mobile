@@ -30,11 +30,10 @@ class _ProductFormPageState extends State<ProductFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Gear'),
+        title: const Text('Add Product'),
         backgroundColor: const Color(0xFF1D4ED8),
         foregroundColor: Colors.white,
       ),
-      drawer: const LeftDrawer(),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -44,7 +43,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
             children: [
               _buildTextField(
                 label: 'Name',
-                hint: 'Enter gear name',
+                hint: 'Enter product name',
                 onChanged: (value) => _name = value,
                 validator: (value) =>
                     (value == null || value.isEmpty) ? 'Name cannot be empty!' : null,
@@ -67,7 +66,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
               ),
               _buildTextField(
                 label: 'Description',
-                hint: 'Write what makes this gear special',
+                hint: 'Write what makes this product special',
                 maxLines: 4,
                 onChanged: (value) => _description = value,
                 validator: (value) => (value == null || value.isEmpty)
@@ -140,7 +139,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                     ),
                     icon: const Icon(Icons.save, color: Colors.white),
                     label: const Text(
-                      'Save Gear',
+                      'Add Product',
                       style: TextStyle(color: Colors.white),
                     ),
                     onPressed: () => _submitForm(request),
@@ -184,11 +183,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
-    print('=== SUBMIT DEBUG ===');
-    print('Logged in: ${request.loggedIn}');
-    print('Cookies: ${request.cookies}');
-    print('JSON data: ${request.jsonData}');
 
     final response = await request.postJson(
       '$baseUrl/shop/api/products/create/',

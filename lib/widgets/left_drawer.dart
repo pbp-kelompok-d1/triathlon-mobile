@@ -9,14 +9,26 @@ import '../forum/screens/forum_list.dart';
 import '../ticket/screens/ticket_list_page.dart';
 import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
+import 'package:triathlon_mobile/shop/screens/admin_dashboard.dart'; // ← Import admin dashboard
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
+  Future<bool> _checkIsAdmin(CookieRequest request) async {
+    try {
+      final response = await request.get('$baseUrl/auth/check-admin/');
+      if (response is Map<String, dynamic>) {
+        return response['is_admin'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-  // Reuse the same CookieRequest that login.dart seeded so logout works consistently.
-  final request = context.read<CookieRequest>();
+    final request = context.read<CookieRequest>();
 
     return Drawer(
       child: ListView(
@@ -54,10 +66,11 @@ class LeftDrawer extends StatelessWidget {
             title: const Text('Home'),
             onTap: () {
               Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyHomePage(),
-                  ));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MyHomePage(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -108,12 +121,46 @@ class LeftDrawer extends StatelessWidget {
               );
             },
           ),
+          // ✅ ADMIN MENU - Tambahkan ini
+          FutureBuilder<bool>(
+            future: _checkIsAdmin(request),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox.shrink(); // Hide sementara saat loading
+              }
+
+              if (snapshot.data == true) {
+                return ListTile(
+                  leading: const Icon(
+                    Icons.admin_panel_settings,
+                    color: Colors.deepPurple,
+                  ),
+                  title: const Text(
+                    'Admin Dashboard',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminDashboardPage(),
+                      ),
+                    );
+                  },
+                );
+              }
+
+              return const SizedBox.shrink(); // Hide jika bukan admin
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () async {
-              // Calling the Django logout endpoint clears both session + cookies in one go.
               final response = await request.logout('$baseUrl/auth/logout/');
 
               if (!context.mounted) return;
@@ -131,11 +178,10 @@ class LeftDrawer extends StatelessWidget {
                   ),
                 );
 
-              // Drop the entire navigation stack so the login screen is the only page left.
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
+                    (route) => false,
               );
             },
           ),
