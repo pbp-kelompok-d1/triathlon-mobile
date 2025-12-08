@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/shop/models/cart.dart';
 import '../models/cart_item.dart';
+import 'checkout.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -108,60 +109,14 @@ class _CartPageState extends State<CartPage> {
   }
 
   Future<void> _checkout() async {
-    final request = context.read<CookieRequest>();
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Checkout'),
-        content: const Text('Proceed with checkout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
-            child: const Text('Checkout'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CheckoutPage(),
       ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final response = await request.post('$baseUrl/shop/api/checkout/', {});
-
-      if (response['status'] == 'success') {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? 'Checkout successful'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          _refresh();
-        }
-      } else {
-        throw Exception(response['message'] ?? 'Checkout failed');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    ).then((_) {
+      _refresh();
+    });
   }
 
   @override
@@ -218,7 +173,6 @@ class _CartPageState extends State<CartPage> {
           return CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // Hero Section dengan fancy scrolling
               SliverToBoxAdapter(
                 child: AnimatedBuilder(
                   animation: _scrollController,
@@ -301,7 +255,6 @@ class _CartPageState extends State<CartPage> {
                 ),
               ),
 
-              // Empty State
               if (cart.items.isEmpty)
                 SliverFillRemaining(
                   child: Center(
@@ -332,7 +285,6 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
 
-              // Cart Items
               if (cart.items.isNotEmpty)
                 SliverPadding(
                   padding: EdgeInsets.all(isDesktop ? 24 : 16),
@@ -353,7 +305,6 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
 
-              // Bottom Padding untuk Checkout Button
               if (cart.items.isNotEmpty)
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 100),
@@ -362,7 +313,6 @@ class _CartPageState extends State<CartPage> {
           );
         },
       ),
-      // Checkout Bottom Sheet
       bottomSheet: FutureBuilder<CartResponse>(
         future: _cartFuture,
         builder: (context, snapshot) {
@@ -391,26 +341,6 @@ class _CartPageState extends State<CartPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        _currencyFormatter.format(cart.total),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -512,153 +442,176 @@ class _CartItemCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           children: [
-            // Product Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: imageUrl != null
-                  ? Image.network(
-                imageUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                headers: kIsWeb ? null : cookieHeader,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 80,
-                  height: 80,
-                  alignment: Alignment.center,
-                  color: Colors.grey[200],
-                  child: Icon(Icons.image, size: 32, color: Colors.grey[400]),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageUrl != null
+                      ? Image.network(
+                    imageUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    headers: kIsWeb ? null : cookieHeader,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 80,
+                      height: 80,
+                      alignment: Alignment.center,
+                      color: Colors.grey[200],
+                      child: Icon(Icons.image,
+                          size: 32, color: Colors.grey[400]),
+                    ),
+                  )
+                      : Container(
+                    width: 80,
+                    height: 80,
+                    alignment: Alignment.center,
+                    color: Colors.grey[200],
+                    child: Icon(Icons.image,
+                        size: 32, color: Colors.grey[400]),
+                  ),
                 ),
-              )
-                  : Container(
-                width: 80,
-                height: 80,
-                alignment: Alignment.center,
-                color: Colors.grey[200],
-                child: Icon(Icons.image, size: 32, color: Colors.grey[400]),
-              ),
-            ),
-            const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-            // Product Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  if (item.sellerUsername != null)
-                    Row(
-                      children: [
-                        Icon(Icons.store, size: 12, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            item.sellerUsername!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 4),
-                  Text(
-                    currencyFormatter.format(item.price),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Quantity Controls
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(8),
+                      Text(
+                        item.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      if (item.sellerUsername != null)
+                        Row(
                           children: [
-                            IconButton(
-                              onPressed: item.quantity > 1
-                                  ? () => onUpdateQuantity(item.quantity - 1)
-                                  : null,
-                              icon: const Icon(Icons.remove, size: 18),
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.all(4),
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            Icon(Icons.store,
+                                size: 12, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Expanded(
                               child: Text(
-                                '${item.quantity}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                                item.sellerUsername!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
                                 ),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: item.quantity < item.stock
-                                  ? () => onUpdateQuantity(item.quantity + 1)
-                                  : null,
-                              icon: const Icon(Icons.add, size: 18),
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.all(4),
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const Spacer(),
-                      // Subtotal
+                      const SizedBox(height: 8),
                       Text(
-                        currencyFormatter.format(item.subtotal),
+                        currencyFormatter.format(item.price),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.green[700],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: Colors.red,
+                  tooltip: 'Remove',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red[50],
+                    padding: const EdgeInsets.all(8),
+                    minimumSize: const Size(36, 36),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            // Delete Button
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.delete, color: Colors.red),
-              tooltip: 'Remove',
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.red[50],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: item.quantity > 1
+                            ? () => onUpdateQuantity(item.quantity - 1)
+                            : null,
+                        icon: const Icon(Icons.remove, size: 18),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '${item.quantity}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: item.quantity < item.stock
+                            ? () => onUpdateQuantity(item.quantity + 1)
+                            : null,
+                        icon: const Icon(Icons.add, size: 18),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Subtotal',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      currencyFormatter.format(item.subtotal),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),

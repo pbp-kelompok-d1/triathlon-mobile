@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../constants.dart';
 import '../../widgets/left_drawer.dart';
-
+import 'shop_main.dart';
 
 class ProductFormPage extends StatefulWidget {
   const ProductFormPage({super.key});
@@ -34,117 +34,148 @@ class _ProductFormPageState extends State<ProductFormPage> {
         backgroundColor: const Color(0xFF1D4ED8),
         foregroundColor: Colors.white,
       ),
+      drawer: const LeftDrawer(),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTextField(
-                label: 'Name',
+                label: 'Product Name',
                 hint: 'Enter product name',
                 onChanged: (value) => _name = value,
-                validator: (value) =>
-                    (value == null || value.isEmpty) ? 'Name cannot be empty!' : null,
-              ),
-              _buildTextField(
-                label: 'Price',
-                hint: 'Enter price in Rupiah',
-                keyboardType: TextInputType.number,
-                onChanged: (value) => _price = value,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Price cannot be empty!';
-                  }
-                  final parsed = double.tryParse(value);
-                  if (parsed == null || parsed <= 0) {
-                    return 'Price must be greater than 0!';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Product name is required';
                   }
                   return null;
                 },
               ),
               _buildTextField(
                 label: 'Description',
-                hint: 'Write what makes this product special',
-                maxLines: 4,
+                hint: 'Describe your product...',
+                maxLines: 5,
                 onChanged: (value) => _description = value,
-                validator: (value) => (value == null || value.isEmpty)
-                    ? 'Description cannot be empty!'
-                    : null,
+                validator: null,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Category',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _category,
+                decoration: InputDecoration(
+                  hintText: 'Select a category',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'running', child: Text('Running')),
+                  DropdownMenuItem(value: 'cycling', child: Text('Cycling')),
+                  DropdownMenuItem(value: 'swimming', child: Text('Swimming')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _category = value);
+                  }
+                },
+              ),
+              _buildTextField(
+                label: 'Price (Rp)',
+                hint: '0',
+                keyboardType: TextInputType.number,
+                onChanged: (value) => _price = value,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Price is required';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Price must be a valid number';
+                  }
+                  return null;
+                },
+              ),
+              _buildTextField(
+                label: 'Stock Quantity',
+                hint: 'Enter stock quantity',
+                keyboardType: TextInputType.number,
+                onChanged: (value) => _stock = int.tryParse(value) ?? 0,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Stock quantity is required';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Stock must be a valid number';
+                  }
+                  return null;
+                },
               ),
               _buildTextField(
                 label: 'Thumbnail URL',
                 hint: 'https://example.com/image.jpg',
                 onChanged: (value) => _thumbnail = value,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return null;
-                  }
-                  final pattern = RegExp(
-                    r'^https?://.*\.(jpg|jpeg|png|gif|bmp|webp)$',
-                    caseSensitive: false,
-                  );
-                  if (!pattern.hasMatch(value)) {
-                    return 'Enter a valid image URL';
-                  }
-                  return null;
-                },
+                validator: null,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ShopPage()),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        side: const BorderSide(color: Colors.grey),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'running', child: Text('Running')),
-                    DropdownMenuItem(value: 'cycling', child: Text('Cycling')),
-                    DropdownMenuItem(value: 'swimming', child: Text('Swimming')),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => _category = value);
-                  },
-                ),
-              ),
-              _buildTextField(
-                label: 'Stock',
-                hint: 'Enter stock quantity',
-                keyboardType: TextInputType.number,
-                onChanged: (value) => _stock = int.tryParse(value) ?? 0,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Stock cannot be empty!';
-                  }
-                  final parsed = int.tryParse(value);
-                  if (parsed == null || parsed < 0) {
-                    return 'Stock must be zero or more.';
-                  }
-                  return null;
-                },
-              ),
-              Align(
-                alignment: Alignment.center,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4ED8),
-                      minimumSize: const Size(double.infinity, 48),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _submitForm(request),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1D4ED8),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Add Product',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                    icon: const Icon(Icons.save, color: Colors.white),
-                    label: const Text(
-                      'Add Product',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onPressed: () => _submitForm(request),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -153,28 +184,44 @@ class _ProductFormPageState extends State<ProductFormPage> {
     );
   }
 
-  Padding _buildTextField({
+  Widget _buildTextField({
     required String label,
     required String hint,
     int maxLines = 1,
     TextInputType? keyboardType,
     required void Function(String value) onChanged,
-    required String? Function(String? value) validator,
+    String? Function(String? value)? validator,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        onChanged: onChanged,
-        validator: validator,
+          const SizedBox(height: 8),
+          TextFormField(
+            decoration: InputDecoration(
+              hintText: hint,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            validator: validator,
+          ),
+        ],
       ),
     );
   }
@@ -233,14 +280,18 @@ class _ProductFormPageState extends State<ProductFormPage> {
       );
 
       if (!mounted) return;
+
+      if (shouldNavigate == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ShopPage()),
+        );
+      }
     } else {
       final errorMessage = response['message'] ?? 'Failed to save product';
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     }
   }
 }
-

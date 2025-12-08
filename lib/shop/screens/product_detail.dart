@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/shop/models/product.dart';
 import 'package:triathlon_mobile/shop/services/wishlist_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.product});
@@ -26,23 +28,45 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    _checkWishlistStatus();
+    _loadWishlistState();
   }
 
-  Future<void> _checkWishlistStatus() async {
+  Future<void> _loadWishlistState() async {
     try {
-      final request = context.read<CookieRequest>();
-      final service = WishlistService(request);
-      final inWishlist = await service.isInWishlist(widget.product.id);
-      if (mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      final localState = prefs.getBool('wishlist_${widget.product.id}');
+
+      // Load local state immediately
+      if (localState != null && mounted) {
         setState(() {
-          _isInWishlist = inWishlist;
+          _isInWishlist = localState;
           _isLoadingWishlist = false;
         });
       }
-    } catch (e) {
+
+      // Then sync with server
+      final request = context.read<CookieRequest>();
+      final service = WishlistService(request);
+      final serverState = await service.isInWishlist(widget.product.id);
+
       if (mounted) {
-        setState(() => _isLoadingWishlist = false);
+        setState(() {
+          _isInWishlist = serverState;
+          _isLoadingWishlist = false;
+        });
+
+        // Update local state with server state
+        await prefs.setBool('wishlist_${widget.product.id}', serverState);
+      }
+    } catch (e) {
+      // Fallback to local state if server check fails
+      final prefs = await SharedPreferences.getInstance();
+      final localState = prefs.getBool('wishlist_${widget.product.id}') ?? false;
+      if (mounted) {
+        setState(() {
+          _isInWishlist = localState;
+          _isLoadingWishlist = false;
+        });
       }
     }
   }
@@ -58,10 +82,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       final result = await service.toggleWishlist(widget.product.id);
 
       if (result['success'] == true) {
+        final newState = result['inWishlist'] ?? false;
+
+        // Save to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('wishlist_${widget.product.id}', newState);
+
         setState(() {
-          _isInWishlist = result['inWishlist'] ?? false;
+          _isInWishlist = newState;
           _hasWishlistChanged = true;
         });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -164,6 +195,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final request = context.read<CookieRequest>();
     final cookieHeader = request.cookies.isNotEmpty
@@ -184,22 +216,35 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1D4ED8),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.of(context).pop({
+              'hasChanged': _hasWishlistChanged,
+              'isInWishlist': _isInWishlist,
+            });
+          },
+        ),
+        title: const Text(
+          'Product Detail',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.normal,
+            fontSize: 20,
+          ),
+        ),
+      ),
       body: CustomScrollView(
         slivers: [
-          // App Bar with Product Image
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            backgroundColor: const Color(0xFF1D4ED8),
-            iconTheme: const IconThemeData(color: Colors.white),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                Navigator.of(context).pop(_hasWishlistChanged);
-              },
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: imageUrl != null
+          // Product Image
+          SliverToBoxAdapter(
+            child: Container(
+              height: 300,
+              color: Colors.grey[100],
+              child: imageUrl != null
                   ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
@@ -468,5 +513,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
     );
   }
+
 
 }
