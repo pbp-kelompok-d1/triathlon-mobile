@@ -2,7 +2,8 @@
 import '../../forum/models/forum_post.dart';
 import '../../forum/models/forum_reply.dart';
 import '../../shop/models/product.dart';
-import '../../ticket/models/ticket_model.dart' show Place, Ticket; // Ambil Place dan Ticket
+import '../../ticket/models/ticket_model.dart' show Ticket; // Ambil Place dan Ticket
+import '../../models/place.dart';
 
 class DashboardData {
   final String role;

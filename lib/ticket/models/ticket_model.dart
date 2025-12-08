@@ -1,5 +1,5 @@
 // lib/ticket/models/ticket_model.dart
-import 'dart:convert';
+import '../../../models/place.dart';
 
 // ============ USER & PROFILE ============
 class User {
@@ -63,49 +63,6 @@ class Profile {
 
   bool isAdmin() {
     return role?.toLowerCase() == 'admin';
-  }
-}
-
-// ============ PLACE ============
-class Place {
-  final int id;
-  final String name;
-  final double price;
-  final String? description;
-  final String? city;
-  final String? genre;
-
-  Place({
-    required this.id,
-    required this.name,
-    required this.price,
-    this.description,
-    this.city,
-    this.genre,
-  });
-
-  factory Place.fromJson(Map<String, dynamic> json) {
-    return Place(
-      id: json['id'],
-      name: json['name'],
-      price: (json['price'] is int) 
-          ? (json['price'] as int).toDouble() 
-          : double.parse(json['price'].toString()),
-      description: json['description'],
-      city: json['city'],
-      genre: json['genre'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'price': price,
-      'description': description,
-      'city': city,
-      'genre': genre,
-    };
   }
 }
 

@@ -1,13 +1,15 @@
 // lib/ticket/screens/ticket_form_page.dart
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart'; // Tambahan wajib
+import 'package:pbp_django_auth/pbp_django_auth.dart'; // Tambahan wajib
 import 'package:intl/intl.dart';
-import 'dart:convert';
+// import 'dart:convert'; // Tidak perlu lagi untuk decoding response pbp_django_auth
 import '../models/ticket_model.dart';
-import '/constants.dart';
+import '../../models/place.dart';
+import '../../constants.dart';
 
 class TicketFormPage extends StatefulWidget {
-  final Ticket? ticket; // Null untuk create, berisi data untuk update
+  final Ticket? ticket; // Null for create, contains data for update
 
   const TicketFormPage({Key? key, this.ticket}) : super(key: key);
 
@@ -16,29 +18,55 @@ class TicketFormPage extends StatefulWidget {
 }
 
 class _TicketFormPageState extends State<TicketFormPage> {
-  
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _customerNameController = TextEditingController();
-  final TextEditingController _ticketQuantityController = TextEditingController(text: '1');
-  
+  final TextEditingController _ticketQuantityController =
+      TextEditingController(text: '1');
+
   List<Place> _places = [];
   Place? _selectedPlace;
   DateTime? _selectedDate;
   bool _isLoading = false;
   bool _isLoadingPlaces = false;
 
+  // Flag agar load places hanya dipanggil sekali
+  bool _hasFetchedPlaces = false;
+
   double get totalPrice {
-    if (_selectedPlace == null) return 0;
+    if (_selectedPlace == null) return 0.0;
     final quantity = int.tryParse(_ticketQuantityController.text) ?? 1;
-    return _selectedPlace!.price * quantity;
+    final price = double.tryParse(_selectedPlace!.price) ?? 0.0;
+    return price * quantity;
+  }
+
+  // Fungsi untuk mengurangi jumlah tiket
+  void _decreaseQuantity() {
+    int current = int.tryParse(_ticketQuantityController.text) ?? 1;
+    if (current > 1) {
+      setState(() {
+        _ticketQuantityController.text = (current - 1).toString();
+      });
+    }
+  }
+
+  // Fungsi untuk menambah jumlah tiket
+  void _increaseQuantity() {
+    int current = int.tryParse(_ticketQuantityController.text) ?? 0;
+    // Opsional: Batasi maksimal jika perlu, misal max 100
+    if (current < 100) { 
+      setState(() {
+        _ticketQuantityController.text = (current + 1).toString();
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _loadPlaces();
-    
-    // Jika mode edit, isi form dengan data tiket
+    // Load places dipindahkan ke mekanisme di build/didChangeDependencies
+    // agar bisa akses Provider CookieRequest
+
+    // If edit mode, populate form with ticket data
     if (widget.ticket != null) {
       _customerNameController.text = widget.ticket!.customerName;
       _ticketQuantityController.text = widget.ticket!.ticketQuantity.toString();
@@ -53,28 +81,32 @@ class _TicketFormPageState extends State<TicketFormPage> {
     super.dispose();
   }
 
+  // ========== API FUNCTIONS ==========
 
-  Future<void> _loadPlaces() async {
+  // Menerima request dari Provider
+  Future<void> _loadPlaces(CookieRequest request) async {
     setState(() => _isLoadingPlaces = true);
-    
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/place/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
+    try {
+      // request.get otomatis mengembalikan JSON yang sudah di-decode (Map<String, dynamic>)
+      final response = await request.get('$baseUrl/ticket/api/places/');
+
+      // Cek struktur response (biasanya { "success": true, "data": [...] })
+      // Note: Sesuaikan dengan key JSON dari Django kamu.
+      // Jika Django return langsung list, gunakan response langsung.
+      // Di sini asumsi format: { "data": [...] } seperti kode lama kamu.
+      
+      if (response != null) {
+        // Ambil list dari key 'data' jika ada, atau gunakan response itu sendiri jika list
+        final List<dynamic> jsonList = response['data'] ?? []; 
+
         final places = jsonList.map((json) => Place.fromJson(json)).toList();
-        
+
         setState(() {
           _places = places;
           _isLoadingPlaces = false;
-          
-          // Jika mode edit, set selected place
+
+          // If in edit mode, set the selected place based on ID
           if (widget.ticket != null && _places.isNotEmpty) {
             _selectedPlace = _places.firstWhere(
               (p) => p.id == widget.ticket!.place.id,
@@ -83,15 +115,17 @@ class _TicketFormPageState extends State<TicketFormPage> {
           }
         });
       } else {
-        throw Exception('Failed to load places: ${response.statusCode}');
+        throw Exception('Failed to load places: Response is null');
       }
     } catch (e) {
       setState(() => _isLoadingPlaces = false);
-      _showErrorSnackBar('Failed to load places: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to load places: $e');
+      }
     }
   }
 
-  Future<void> _submitForm() async {
+  Future<void> _submitForm(CookieRequest request) async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPlace == null) {
       _showErrorSnackBar('Please select a place');
@@ -102,50 +136,66 @@ class _TicketFormPageState extends State<TicketFormPage> {
       return;
     }
 
+    // Validate date not in past
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final selectedDateOnly =
+        DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+
+    if (selectedDateOnly.isBefore(todayDate)) {
+      _showErrorSnackBar('Booking date cannot be in the past');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
-    final ticketRequest = TicketRequest(
-      customerName: _customerNameController.text,
-      placeId: _selectedPlace!.id,
-      bookingDate: DateFormat('yyyy-MM-dd').format(_selectedDate!),
-      ticketQuantity: int.parse(_ticketQuantityController.text),
-    );
+    // --- PERUBAHAN UTAMA DI SINI ---
+    // Kita buat Map manual dan pastikan semua value adalah String (.toString())
+    // agar aman diterima oleh CookieRequest.
+    final Map<String, dynamic> payload = {
+      'customer_name': _customerNameController.text,
+      'place': _selectedPlace!.id.toString(), // Konversi int ke String
+      'booking_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+      'ticket_quantity': _ticketQuantityController.text, // Ini sudah String dari controller
+    };
 
     try {
       final isEdit = widget.ticket != null;
-      final url = isEdit 
-          ? '$baseUrl/api/ticket/${widget.ticket!.id}/update/'
-          : '$baseUrl/api/ticket/create/';
-      
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: json.encode(ticketRequest.toJson()),
-      );
+      final url = isEdit
+          ? '$baseUrl/ticket/api/${widget.ticket!.id}/update/'
+          : '$baseUrl/ticket/api/tickets/create/';
 
-      final data = json.decode(response.body);
+      // Kirim payload manual yang sudah dikonversi ke String
+      final response = await request.post(url, payload);
+
+      if (!mounted) return;
+
       setState(() => _isLoading = false);
 
-      if (response.statusCode == 200 && data['success']) {
-        _showSuccessSnackBar(data['message'] ?? 'Ticket saved successfully');
-        Navigator.pop(context, true); // Return true untuk refresh list
+      if (response['success'] == true) {
+        _showSuccessSnackBar(response['message'] ?? 'Ticket saved successfully');
+        Navigator.pop(context, true);
       } else {
-        // Handle errors
-        if (data['errors'] != null) {
-          // Tampilkan error dari form validation
+        if (response['errors'] != null) {
           String errorMessage = '';
-          data['errors'].forEach((field, errors) {
-            errorMessage += '${errors[0]}\n';
-          });
+          if (response['errors'] is Map) {
+            (response['errors'] as Map).forEach((field, errors) {
+              if (errors is List && errors.isNotEmpty) {
+                errorMessage += '$field: ${errors[0]}\n';
+              } else {
+                errorMessage += '$field: $errors\n';
+              }
+            });
+          } else {
+            errorMessage = response['errors'].toString();
+          }
           _showErrorSnackBar(errorMessage.trim());
         } else {
-          _showErrorSnackBar(data['message'] ?? 'Failed to save ticket');
+          _showErrorSnackBar(response['message'] ?? 'Failed to save ticket');
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showErrorSnackBar('An error occurred: $e');
     }
@@ -157,7 +207,7 @@ class _TicketFormPageState extends State<TicketFormPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
@@ -179,25 +229,39 @@ class _TicketFormPageState extends State<TicketFormPage> {
   }
 
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
       ),
     );
   }
 
   void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // 1. Ambil CookieRequest dari Provider
+    final request = context.watch<CookieRequest>();
+
+    // 2. Load Places jika belum pernah diload
+    if (!_hasFetchedPlaces) {
+      _hasFetchedPlaces = true;
+      // Gunakan Future.microtask atau addPostFrameCallback agar aman
+      Future.microtask(() => _loadPlaces(request));
+    }
+
     final isEdit = widget.ticket != null;
 
     return Scaffold(
@@ -242,6 +306,9 @@ class _TicketFormPageState extends State<TicketFormPage> {
                         if (value == null || value.isEmpty) {
                           return 'Customer name is required';
                         }
+                        if (value.length < 3) {
+                          return 'Customer name must be at least 3 characters';
+                        }
                         return null;
                       },
                     ),
@@ -272,10 +339,11 @@ class _TicketFormPageState extends State<TicketFormPage> {
                       hint: const Text('-- Select Place --'),
                       isExpanded: true,
                       items: _places.map((place) {
+                        final priceValue = double.tryParse(place.price) ?? 0.0;
                         return DropdownMenuItem<Place>(
                           value: place,
                           child: Text(
-                            '${place.name} - Rp ${NumberFormat('#,##0', 'id_ID').format(place.price)}',
+                            '${place.name} - Rp ${NumberFormat('#,##0', 'id_ID').format(priceValue)}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
@@ -321,7 +389,8 @@ class _TicketFormPageState extends State<TicketFormPage> {
                         child: Text(
                           _selectedDate == null
                               ? 'Select date'
-                              : DateFormat('dd MMM yyyy').format(_selectedDate!),
+                              : DateFormat('dd MMM yyyy')
+                                  .format(_selectedDate!),
                           style: TextStyle(
                             color: _selectedDate == null
                                 ? Colors.grey.shade600
@@ -333,7 +402,7 @@ class _TicketFormPageState extends State<TicketFormPage> {
 
                     const SizedBox(height: 20),
 
-                    // Ticket Quantity
+                    // Ticket Quantity Label
                     const Text(
                       'Ticket Quantity',
                       style: TextStyle(
@@ -343,6 +412,8 @@ class _TicketFormPageState extends State<TicketFormPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
+
+                    // --- MODIFIKASI INPUT QUANTITY ---
                     TextFormField(
                       controller: _ticketQuantityController,
                       keyboardType: TextInputType.number,
@@ -354,21 +425,49 @@ class _TicketFormPageState extends State<TicketFormPage> {
                           horizontal: 16,
                           vertical: 16,
                         ),
+                        // Spinner Arrows di sebelah kanan
+                        suffixIcon: SizedBox(
+                          height: 40, // Batasi tinggi agar pas di dalam input
+                          width: 30,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Panah Atas
+                              Expanded(
+                                child: InkWell(
+                                  onTap: _increaseQuantity,
+                                  child: const Icon(
+                                    Icons.arrow_drop_up,
+                                    size: 24,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                              // Panah Bawah
+                              Expanded(
+                                child: InkWell(
+                                  onTap: _decreaseQuantity,
+                                  child: const Icon(
+                                    Icons.arrow_drop_down,
+                                    size: 24,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      onChanged: (_) => setState(() {}), // Update total price
+                      // Update total price saat diketik manual
+                      onChanged: (_) => setState(() {}),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Quantity is required';
-                        }
-                        final quantity = int.tryParse(value);
-                        if (quantity == null || quantity < 1) {
-                          return 'Quantity must be at least 1';
-                        }
+                        if (value == null || value.isEmpty) return 'Required';
+                        final n = int.tryParse(value);
+                        if (n == null || n < 1) return 'Min 1';
+                        if (n > 100) return 'Max 100';
                         return null;
                       },
                     ),
-
-                    const SizedBox(height: 20),
 
                     // Total Price Display
                     const Text(
@@ -413,7 +512,9 @@ class _TicketFormPageState extends State<TicketFormPage> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: _isLoading
+                                ? null
+                                : () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -426,7 +527,10 @@ class _TicketFormPageState extends State<TicketFormPage> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _submitForm,
+                            // Panggil submitForm dengan passing request
+                            onPressed: _isLoading
+                                ? null
+                                : () => _submitForm(request),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               backgroundColor: Colors.blue.shade600,

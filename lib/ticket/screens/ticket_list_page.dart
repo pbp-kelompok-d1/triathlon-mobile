@@ -1,7 +1,7 @@
 // lib/ticket/screens/ticket_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:provider/provider.dart'; // Tambahan wajib
+import 'package:pbp_django_auth/pbp_django_auth.dart'; // Tambahan wajib
 import '../models/ticket_model.dart';
 import '../widgets/ticket_card.dart';
 import 'ticket_form_page.dart';
@@ -17,7 +17,6 @@ class TicketListPage extends StatefulWidget {
 }
 
 class _TicketListPageState extends State<TicketListPage> {
-  
   List<Ticket> _tickets = [];
   bool _isLoading = false;
   String _selectedFilter = '';
@@ -31,7 +30,10 @@ class _TicketListPageState extends State<TicketListPage> {
   @override
   void initState() {
     super.initState();
-    _loadTickets();
+    // Panggil load ticket setelah frame pertama dirender agar context provider aman
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTickets();
+    });
   }
 
   @override
@@ -41,37 +43,40 @@ class _TicketListPageState extends State<TicketListPage> {
   }
 
   // ========== API CALLS ==========
-  
+
   Future<void> _loadTickets() async {
     setState(() => _isLoading = true);
 
+    // Gunakan CookieRequest untuk autentikasi
+    final request = context.read<CookieRequest>();
+
     try {
-      // Build URL dengan query parameters
-      var uri = Uri.parse('$baseUrl/api/ticket/');
-      Map<String, String> queryParams = {};
+      // Konstruksi URL
+      String url = '$baseUrl/ticket/api/tickets/';
       
+      // Menambahkan Query Params manual karena pbp_django_auth .get menerima URL string
+      List<String> queryParts = [];
       if (_selectedFilter.isNotEmpty) {
-        queryParams['status'] = _selectedFilter;
+        queryParts.add('status=$_selectedFilter');
       }
       if (_searchQuery.isNotEmpty) {
-        queryParams['search'] = _searchQuery;
+        queryParts.add('search=$_searchQuery');
       }
       
-      if (queryParams.isNotEmpty) {
-        uri = uri.replace(queryParameters: queryParams);
+      if (queryParts.isNotEmpty) {
+        url += '?' + queryParts.join('&');
       }
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      );
+      // Request ke Django (request.get otomatis return JSON decoded)
+      final response = await request.get(url);
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
-        final tickets = jsonList.map((json) => Ticket.fromJson(json)).toList();
+      // Perbaikan Parsing JSON
+      // Django return: { "success": true, "data": [...] }
+      if (response != null && response['data'] != null) {
+        final List<dynamic> listData = response['data'];
+        
+        // Mapping ke model
+        final tickets = listData.map((json) => Ticket.fromJson(json)).toList();
 
         // Hitung statistik
         final now = DateTime.now();
@@ -101,15 +106,21 @@ class _TicketListPageState extends State<TicketListPage> {
           _isLoading = false;
         });
       } else {
-        throw Exception('Failed to load tickets: ${response.statusCode}');
+        // Handle jika response kosong atau format salah
+        setState(() => _isLoading = false);
+        // Opsional: print(response) untuk debugging
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showErrorSnackBar('Failed to load tickets: $e');
+      print("Error loading tickets: $e");
+      // _showErrorSnackBar('Failed to load tickets: $e'); 
+      // Comment snackbar di atas agar tidak spam error saat inisialisasi awal
     }
   }
 
   Future<void> _deleteTicket(Ticket ticket) async {
+    final request = context.read<CookieRequest>();
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -134,21 +145,18 @@ class _TicketListPageState extends State<TicketListPage> {
 
     if (confirm == true) {
       try {
-        final response = await http.delete(
-          Uri.parse('$baseUrl/api/ticket/${ticket.id}/delete/'),
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
+        // Menggunakan POST karena view Django kamu support ["DELETE", "POST"]
+        // Ini lebih aman untuk session cookie dibanding http.delete biasa
+        final response = await request.post(
+          '$baseUrl/ticket/api/${ticket.id}/delete/', 
+          {}, // Body kosong
         );
 
-        final data = json.decode(response.body);
-
-        if (response.statusCode == 200 && data['success']) {
-          _showSuccessSnackBar(data['message'] ?? 'Ticket deleted successfully');
+        if (response['success'] == true) {
+          _showSuccessSnackBar(response['message'] ?? 'Ticket deleted successfully');
           _loadTickets(); // Reload list
         } else {
-          _showErrorSnackBar(data['message'] ?? 'Failed to delete ticket');
+          _showErrorSnackBar(response['message'] ?? 'Failed to delete ticket');
         }
       } catch (e) {
         _showErrorSnackBar('Error deleting ticket: $e');
@@ -196,15 +204,16 @@ class _TicketListPageState extends State<TicketListPage> {
       drawer: const LeftDrawer(),
       appBar: AppBar(
         title: const Text('My Tickets', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Color(0xFF433BFF),
+        backgroundColor: const Color(0xFF433BFF),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
           // Hero Section
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/onboarding_bg.png'),
+                image: AssetImage('assets/images/herosectionticket.png'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -292,7 +301,7 @@ class _TicketListPageState extends State<TicketListPage> {
                   icon: const Icon(Icons.add),
                   label: const Text('Book'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF433BFF),
+                    backgroundColor: const Color(0xFF433BFF),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -384,7 +393,7 @@ class _TicketListPageState extends State<TicketListPage> {
         selected: isSelected,
         onSelected: (_) => _applyFilter(value),
         backgroundColor: Colors.white,
-        selectedColor: Color(0xFF433BFF),
+        selectedColor: const Color(0xFF433BFF),
         labelStyle: TextStyle(
           color: isSelected ? Colors.white : Colors.grey.shade700,
           fontWeight: FontWeight.w600,
