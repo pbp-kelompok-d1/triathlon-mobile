@@ -1,12 +1,18 @@
 // =============================================================================
-// Forum Reply Model
+// ForumReply Model
 // =============================================================================
-// This model represents a single reply/comment on a forum post.
-// Features:
-// - Reply content and metadata (author, date)
-// - Quote reply support (quoting another reply)
-// - Author role badges (Admin, Seller, etc.)
-// - Post count for author
+// This model represents a reply to a forum post in the triathlon application.
+// 
+// Key Features:
+// - Reply content with author information
+// - Author role and total posts count (for reputation display)
+// - Quote support via QuoteInfo (for quoting other replies)
+// 
+// The quote system works as follows:
+// - When creating a reply, user can optionally quote another reply
+// - The quote_reply_id is sent to Django, which stores the FK relationship
+// - When fetching replies, Django returns quote_info with the quoted content
+// - This allows displaying "Originally posted by @user: ..." in the UI
 // =============================================================================
 
 import 'dart:convert';
@@ -19,45 +25,33 @@ List<ForumReply> forumReplyFromJson(String str) =>
 String forumReplyToJson(List<ForumReply> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
-// =============================================================================
-// ForumReply Class
-// =============================================================================
-/// Represents a single reply to a forum post
+/// Represents a reply to a forum post
 class ForumReply {
   // ---------------------------------------------------------------------------
-  // Properties
+  // Basic Reply Information
   // ---------------------------------------------------------------------------
-  
-  /// Unique identifier for the reply (UUID string)
-  String id;
-  
-  /// The content/text of the reply
-  String content;
-  
-  /// Formatted date string when the reply was created
-  String createdAt;
-  
-  /// Username of the reply author
-  String author;
-  
-  /// Numeric ID of the author (for permission checks)
-  int? authorId;
-  
-  /// First letter of author's username (for avatar)
-  String authorInitial;
-  
-  /// Author's role (ADMIN, SELLER, USER, etc.)
-  String authorRole;
-  
-  /// Total number of posts + replies by this author
-  int totalPosts;
-  
-  /// Information about the quoted reply (if this reply quotes another)
-  QuoteInfo? quoteInfo;
+  String id;           // UUID of the reply
+  String content;      // Reply text content
+  String createdAt;    // Formatted creation timestamp (e.g., "Dec 08, 2024")
 
   // ---------------------------------------------------------------------------
-  // Constructor
+  // Author Information
   // ---------------------------------------------------------------------------
+  String author;         // Author's username
+  int? authorId;         // Author's user ID (for permission checks)
+  String authorInitial;  // First letter of username (for avatar)
+  String authorRole;     // Author's role (USER, ADMIN, SELLER, FACILITY_ADMIN)
+  int totalPosts;        // Author's total post count (for reputation display)
+
+  // ---------------------------------------------------------------------------
+  // Quote Information (optional)
+  // ---------------------------------------------------------------------------
+  // If this reply quotes another reply, quoteInfo contains:
+  // - The quoted reply's ID
+  // - The quoted reply's author
+  // - The quoted content (may be truncated)
+  QuoteInfo? quoteInfo;
+
   ForumReply({
     required this.id,
     required this.content,
@@ -70,11 +64,7 @@ class ForumReply {
     this.quoteInfo,
   });
 
-  // ---------------------------------------------------------------------------
-  // JSON Serialization
-  // ---------------------------------------------------------------------------
-  
-  /// Create a ForumReply from JSON data
+  /// Factory constructor to create a ForumReply from JSON data
   factory ForumReply.fromJson(Map<String, dynamic> json) => ForumReply(
         id: json["id"],
         content: json["content"],
@@ -82,14 +72,14 @@ class ForumReply {
         author: json["author"],
         authorId: json["author_id"],
         authorInitial: json["author_initial"],
-        authorRole: json["author_role"] ?? 'USER',
-        totalPosts: json["total_posts"] ?? 0,
+        authorRole: json["author_role"],
+        totalPosts: json["total_posts"],
         quoteInfo: json["quote_info"] == null
             ? null
             : QuoteInfo.fromJson(json["quote_info"]),
       );
 
-  /// Convert this ForumReply to JSON
+  /// Convert this ForumReply to a JSON map
   Map<String, dynamic> toJson() => {
         "id": id,
         "content": content,
@@ -102,81 +92,55 @@ class ForumReply {
         "quote_info": quoteInfo?.toJson(),
       };
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Helper Methods
-  // ---------------------------------------------------------------------------
-  
+  // ===========================================================================
+
+  /// Check if this reply has quoted content
+  bool get hasQuote => quoteInfo != null;
+
   /// Check if the current user can delete this reply
-  /// - Reply author can delete their own reply
-  /// - Admins can delete any reply
+  /// Authors can delete their own replies, Admins can delete any reply
   bool canDelete(int? currentUserId, String? currentUserRole) {
     if (currentUserId == null) return false;
     // Author can delete their own reply
-    if (authorId == currentUserId) return true;
+    if (authorId != null && authorId == currentUserId) return true;
     // Admin can delete any reply
     if (currentUserRole == 'ADMIN') return true;
     return false;
   }
-
-  /// Check if this reply has a quote
-  bool get hasQuote => quoteInfo != null;
-
-  /// Check if author is admin
-  bool get isAuthorAdmin => authorRole == 'ADMIN';
-
-  /// Check if author is seller
-  bool get isAuthorSeller => authorRole == 'SELLER';
-
-  /// Get a short preview of the content (for quoting)
-  String get contentPreview {
-    if (content.length <= 100) return content;
-    return '${content.substring(0, 100)}...';
-  }
 }
 
 // =============================================================================
-// QuoteInfo Class
+// QuoteInfo Model
 // =============================================================================
+// Represents the quoted content when a reply quotes another reply.
+// This is returned by Django when fetching replies that have a quote_reply FK.
+// =============================================================================
+
 /// Information about a quoted reply
 class QuoteInfo {
-  // ---------------------------------------------------------------------------
-  // Properties
-  // ---------------------------------------------------------------------------
-  
-  /// ID of the quoted reply
-  String id;
-  
-  /// Author of the quoted reply
-  String author;
-  
-  /// Content of the quoted reply (may be truncated)
-  String content;
+  String id;       // UUID of the quoted reply
+  String author;   // Author of the quoted reply
+  String content;  // Content of the quoted reply (may be truncated)
 
-  // ---------------------------------------------------------------------------
-  // Constructor
-  // ---------------------------------------------------------------------------
   QuoteInfo({
     required this.id,
     required this.author,
     required this.content,
   });
 
-  // ---------------------------------------------------------------------------
-  // JSON Serialization
-  // ---------------------------------------------------------------------------
-  
-  /// Create a QuoteInfo from JSON data
+  /// Factory constructor to create a QuoteInfo from JSON data
   factory QuoteInfo.fromJson(Map<String, dynamic> json) => QuoteInfo(
         id: json["id"],
         author: json["author"],
         content: json["content"],
       );
 
-  /// Convert this QuoteInfo to JSON
+  /// Convert this QuoteInfo to a JSON map
   Map<String, dynamic> toJson() => {
         "id": id,
         "author": author,
         "content": content,
       };
 }
-

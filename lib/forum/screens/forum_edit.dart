@@ -1,14 +1,13 @@
 // =============================================================================
-// ForumFormPage - Create New Forum Post Screen
+// ForumEditPage - Edit Forum Post Screen
 // =============================================================================
-// This screen allows users to create new forum posts.
+// This screen allows users to edit their existing forum posts.
 // Features:
-// - Title and content fields with validation (min 5 and 10 chars respectively)
-// - Category selection (general, product_review, location_review, etc.)
-// - Sport category selection (running, cycling, swimming)
-// - Optional product ID linking (UUID for product reviews)
-// - Optional location ID linking (Integer for location reviews)
-// - Admin-only: pin post toggle
+// - Edit title, content, category, sport_category
+// - Link to products (UUID) or locations (Integer ID)
+// - Admin-only: toggle is_pinned status
+// - Form validation with minimum length requirements
+// - Shows last_edited timestamp after successful edit
 // =============================================================================
 
 import 'dart:convert';
@@ -18,33 +17,37 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../models/forum_post.dart';
 
-/// Screen for creating a new forum post
-class ForumFormPage extends StatefulWidget {
-  const ForumFormPage({super.key});
+/// Screen for editing an existing forum post
+class ForumEditPage extends StatefulWidget {
+  /// The post to edit - contains all current values
+  final ForumPost post;
+
+  const ForumEditPage({super.key, required this.post});
 
   @override
-  State<ForumFormPage> createState() => _ForumFormPageState();
+  State<ForumEditPage> createState() => _ForumEditPageState();
 }
 
-class _ForumFormPageState extends State<ForumFormPage> {
+class _ForumEditPageState extends State<ForumEditPage> {
   // ===========================================================================
-  // Form Key and State Variables
+  // Form Key and Controllers
   // ===========================================================================
   final _formKey = GlobalKey<FormState>();
   
-  // Basic post fields
-  String _title = '';
-  String _content = '';
-  String _category = 'general';
-  String _sportCategory = 'running';
-  
-  // Optional linking fields (new)
-  String _productId = '';      // UUID string for product linking
-  String _locationId = '';     // Integer string for location linking
-  bool _isPinned = false;      // Admin-only: pin post toggle
-  
-  // Loading state
+  // Text controllers for form fields
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
+  late TextEditingController _productIdController;
+  late TextEditingController _locationIdController;
+
+  // ===========================================================================
+  // Form State Variables
+  // ===========================================================================
+  late String _category;
+  late String _sportCategory;
+  late bool _isPinned;
   bool _isLoading = false;
 
   // ===========================================================================
@@ -69,11 +72,42 @@ class _ForumFormPageState extends State<ForumFormPage> {
   ];
 
   // ===========================================================================
+  // Lifecycle Methods
+  // ===========================================================================
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with existing post data
+    _titleController = TextEditingController(text: widget.post.title);
+    _contentController = TextEditingController(text: widget.post.fullContent);
+    _productIdController = TextEditingController(text: widget.post.productId ?? '');
+    _locationIdController = TextEditingController(
+      text: widget.post.locationId?.toString() ?? '',
+    );
+    
+    // Initialize dropdown values
+    _category = widget.post.category;
+    _sportCategory = widget.post.sportCategory;
+    _isPinned = widget.post.isPinned;
+  }
+
+  @override
+  void dispose() {
+    // Clean up controllers
+    _titleController.dispose();
+    _contentController.dispose();
+    _productIdController.dispose();
+    _locationIdController.dispose();
+    super.dispose();
+  }
+
+  // ===========================================================================
   // Form Submission
   // ===========================================================================
 
-  /// Submit the new post to the Django API
-  Future<void> _submitPost() async {
+  /// Submit the edited post to the Django API
+  Future<void> _submitEdit() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
@@ -84,53 +118,56 @@ class _ForumFormPageState extends State<ForumFormPage> {
     final request = context.read<CookieRequest>();
 
     try {
-      // Build request body with all fields
+      // Build request body
       final Map<String, dynamic> body = {
-        'title': _title.trim(),
-        'content': _content.trim(),
+        'title': _titleController.text.trim(),
+        'content': _contentController.text.trim(),
         'category': _category,
         'sport_category': _sportCategory,
         'is_pinned': _isPinned,
       };
 
       // Add optional product_id if provided
-      if (_productId.trim().isNotEmpty) {
-        body['product_id'] = _productId.trim();
+      if (_productIdController.text.trim().isNotEmpty) {
+        body['product_id'] = _productIdController.text.trim();
       }
 
-      // Add optional location_id if provided
-      if (_locationId.trim().isNotEmpty) {
-        body['location_id'] = _locationId.trim();
+      // Add optional location_id if provided (convert to int)
+      if (_locationIdController.text.trim().isNotEmpty) {
+        body['location_id'] = _locationIdController.text.trim();
       }
 
-      // Send POST request to create endpoint
+      // Send POST request to edit endpoint
       final response = await request.postJson(
-        '$baseUrl/forum/ajax/add/',
+        '$baseUrl/forum/${widget.post.id}/edit/',
         jsonEncode(body),
       );
 
       if (!mounted) return;
 
       // Handle response
-      if (response['status'] == 'success') {
+      if (response['success'] == true) {
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Post created successfully!'),
+            content: Text('Post updated successfully!'),
             backgroundColor: Colors.green,
           ),
         );
-        // Return true to indicate successful creation
+        // Return true to indicate successful edit
         Navigator.pop(context, true);
       } else {
+        // Show error from server
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to create post'),
+            content: Text(response['error'] ?? 'Failed to update post'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
@@ -150,7 +187,7 @@ class _ForumFormPageState extends State<ForumFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get current user info from request to check if admin
+    // Get current user info from request
     final request = context.watch<CookieRequest>();
     final isAdmin = request.jsonData['role'] == 'ADMIN';
 
@@ -159,13 +196,13 @@ class _ForumFormPageState extends State<ForumFormPage> {
       // App Bar
       // -----------------------------------------------------------------------
       appBar: AppBar(
-        title: const Text('Create Forum Post'),
+        title: const Text('Edit Post'),
         backgroundColor: const Color(0xFF1D4ED8),
         foregroundColor: Colors.white,
       ),
       
       // -----------------------------------------------------------------------
-      // Body - Create Form
+      // Body - Edit Form
       // -----------------------------------------------------------------------
       body: Form(
         key: _formKey,
@@ -175,11 +212,38 @@ class _ForumFormPageState extends State<ForumFormPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // -----------------------------------------------------------------
+              // Info Banner - Shows what fields were changed
+              // -----------------------------------------------------------------
+              if (widget.post.hasBeenEdited)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber[700], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Last edited: ${widget.post.lastEdited}',
+                          style: TextStyle(color: Colors.amber[900], fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // -----------------------------------------------------------------
               // Title Field
               // -----------------------------------------------------------------
               _buildSectionTitle('Title'),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _titleController,
                 decoration: InputDecoration(
                   hintText: 'Enter post title',
                   border: OutlineInputBorder(
@@ -188,7 +252,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
                   filled: true,
                   fillColor: Colors.grey[50],
                 ),
-                onChanged: (value) => _title = value,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Title cannot be empty';
@@ -208,6 +271,7 @@ class _ForumFormPageState extends State<ForumFormPage> {
               _buildSectionTitle('Content'),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _contentController,
                 maxLines: 8,
                 decoration: InputDecoration(
                   hintText: 'Write your post content...',
@@ -217,7 +281,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
                   filled: true,
                   fillColor: Colors.grey[50],
                 ),
-                onChanged: (value) => _content = value,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Content cannot be empty';
@@ -298,6 +361,7 @@ class _ForumFormPageState extends State<ForumFormPage> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _productIdController,
                 decoration: InputDecoration(
                   hintText: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
                   border: OutlineInputBorder(
@@ -307,7 +371,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
                   fillColor: Colors.grey[50],
                   prefixIcon: const Icon(Icons.shopping_bag_outlined),
                 ),
-                onChanged: (value) => _productId = value,
               ),
               const SizedBox(height: 20),
 
@@ -322,6 +385,7 @@ class _ForumFormPageState extends State<ForumFormPage> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _locationIdController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'e.g., 42',
@@ -332,7 +396,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
                   fillColor: Colors.grey[50],
                   prefixIcon: const Icon(Icons.location_on_outlined),
                 ),
-                onChanged: (value) => _locationId = value,
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
                     // Validate it's a valid integer
@@ -407,7 +470,7 @@ class _ForumFormPageState extends State<ForumFormPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: _isLoading ? null : _submitPost,
+                  onPressed: _isLoading ? null : _submitEdit,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
@@ -418,13 +481,34 @@ class _ForumFormPageState extends State<ForumFormPage> {
                           ),
                         )
                       : const Text(
-                          'Create Post',
+                          'Update Post',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // -----------------------------------------------------------------
+              // Cancel Button
+              // -----------------------------------------------------------------
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ],
