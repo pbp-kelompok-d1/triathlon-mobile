@@ -16,7 +16,6 @@ class LeftDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
   // Reuse the same CookieRequest that login.dart seeded so logout works consistently.
-  final request = context.read<CookieRequest>();
 
     return Drawer(
       child: ListView(
@@ -105,37 +104,6 @@ class LeftDrawer extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => const TicketListPage(),
                 ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
-            onTap: () async {
-              // Calling the Django logout endpoint clears both session + cookies in one go.
-              final response = await request.logout('$baseUrl/auth/logout/');
-
-              if (!context.mounted) return;
-
-              String logoutMessage = 'Logged out';
-              if (response['message'] != null) {
-                logoutMessage = response['message'];
-              }
-
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(logoutMessage),
-                  ),
-                );
-
-              // Drop the entire navigation stack so the login screen is the only page left.
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
               );
             },
           ),
