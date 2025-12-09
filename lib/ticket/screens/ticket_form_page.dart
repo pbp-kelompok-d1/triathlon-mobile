@@ -1,15 +1,14 @@
 // lib/ticket/screens/ticket_form_page.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Tambahan wajib
-import 'package:pbp_django_auth/pbp_django_auth.dart'; // Tambahan wajib
+import 'package:provider/provider.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:intl/intl.dart';
-// import 'dart:convert'; // Tidak perlu lagi untuk decoding response pbp_django_auth
 import '../models/ticket_model.dart';
 import '../../models/place.dart';
 import '../../constants.dart';
 
 class TicketFormPage extends StatefulWidget {
-  final Ticket? ticket; // Null for create, contains data for update
+  final Ticket? ticket;
 
   const TicketFormPage({Key? key, this.ticket}) : super(key: key);
 
@@ -28,8 +27,6 @@ class _TicketFormPageState extends State<TicketFormPage> {
   DateTime? _selectedDate;
   bool _isLoading = false;
   bool _isLoadingPlaces = false;
-
-  // Flag agar load places hanya dipanggil sekali
   bool _hasFetchedPlaces = false;
 
   double get totalPrice {
@@ -39,34 +36,9 @@ class _TicketFormPageState extends State<TicketFormPage> {
     return price * quantity;
   }
 
-  // Fungsi untuk mengurangi jumlah tiket
-  void _decreaseQuantity() {
-    int current = int.tryParse(_ticketQuantityController.text) ?? 1;
-    if (current > 1) {
-      setState(() {
-        _ticketQuantityController.text = (current - 1).toString();
-      });
-    }
-  }
-
-  // Fungsi untuk menambah jumlah tiket
-  void _increaseQuantity() {
-    int current = int.tryParse(_ticketQuantityController.text) ?? 0;
-    // Opsional: Batasi maksimal jika perlu, misal max 100
-    if (current < 100) { 
-      setState(() {
-        _ticketQuantityController.text = (current + 1).toString();
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    // Load places dipindahkan ke mekanisme di build/didChangeDependencies
-    // agar bisa akses Provider CookieRequest
-
-    // If edit mode, populate form with ticket data
     if (widget.ticket != null) {
       _customerNameController.text = widget.ticket!.customerName;
       _ticketQuantityController.text = widget.ticket!.ticketQuantity.toString();
@@ -81,24 +53,50 @@ class _TicketFormPageState extends State<TicketFormPage> {
     super.dispose();
   }
 
-  // ========== API FUNCTIONS ==========
+  // --- FUNGSI INCREMENT (DIPERBAIKI) ---
+  void _incrementQuantity() {
+    int current = int.tryParse(_ticketQuantityController.text) ?? 0;
+    if (current < 100) {
+      setState(() {
+        current++;
+        _ticketQuantityController.text = current.toString();
+        // Menjaga kursor tetap di akhir angka
+        _ticketQuantityController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _ticketQuantityController.text.length));
+      });
+    }
+  }
 
-  // Menerima request dari Provider
+  // --- FUNGSI DECREMENT (DIPERBAIKI) ---
+  void _decrementQuantity() {
+    int current = int.tryParse(_ticketQuantityController.text) ?? 1;
+    if (current > 1) {
+      setState(() {
+        current--;
+        _ticketQuantityController.text = current.toString();
+        // Menjaga kursor tetap di akhir angka
+        _ticketQuantityController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _ticketQuantityController.text.length));
+      });
+    }
+  }
+
   Future<void> _loadPlaces(CookieRequest request) async {
     setState(() => _isLoadingPlaces = true);
 
     try {
-      // request.get otomatis mengembalikan JSON yang sudah di-decode (Map<String, dynamic>)
       final response = await request.get('$baseUrl/ticket/api/places/');
 
-      // Cek struktur response (biasanya { "success": true, "data": [...] })
-      // Note: Sesuaikan dengan key JSON dari Django kamu.
-      // Jika Django return langsung list, gunakan response langsung.
-      // Di sini asumsi format: { "data": [...] } seperti kode lama kamu.
-      
       if (response != null) {
-        // Ambil list dari key 'data' jika ada, atau gunakan response itu sendiri jika list
-        final List<dynamic> jsonList = response['data'] ?? []; 
+        List<dynamic> jsonList;
+
+        if (response is List) {
+          jsonList = response;
+        } else if (response is Map && response.containsKey('data')) {
+          jsonList = response['data'];
+        } else {
+          jsonList = [];
+        }
 
         final places = jsonList.map((json) => Place.fromJson(json)).toList();
 
@@ -106,16 +104,17 @@ class _TicketFormPageState extends State<TicketFormPage> {
           _places = places;
           _isLoadingPlaces = false;
 
-          // If in edit mode, set the selected place based on ID
           if (widget.ticket != null && _places.isNotEmpty) {
-            _selectedPlace = _places.firstWhere(
-              (p) => p.id == widget.ticket!.place.id,
-              orElse: () => _places.first,
-            );
+            try {
+              _selectedPlace = _places.firstWhere(
+                  (p) => p.id == widget.ticket!.place.id);
+            } catch (e) {
+              _selectedPlace = null;
+            }
           }
         });
       } else {
-        throw Exception('Failed to load places: Response is null');
+        throw Exception('Response is null');
       }
     } catch (e) {
       setState(() => _isLoadingPlaces = false);
@@ -136,7 +135,6 @@ class _TicketFormPageState extends State<TicketFormPage> {
       return;
     }
 
-    // Validate date not in past
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
     final selectedDateOnly =
@@ -149,14 +147,11 @@ class _TicketFormPageState extends State<TicketFormPage> {
 
     setState(() => _isLoading = true);
 
-    // --- PERUBAHAN UTAMA DI SINI ---
-    // Kita buat Map manual dan pastikan semua value adalah String (.toString())
-    // agar aman diterima oleh CookieRequest.
     final Map<String, dynamic> payload = {
       'customer_name': _customerNameController.text,
-      'place': _selectedPlace!.id.toString(), // Konversi int ke String
+      'place': _selectedPlace!.id.toString(),
       'booking_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
-      'ticket_quantity': _ticketQuantityController.text, // Ini sudah String dari controller
+      'ticket_quantity': _ticketQuantityController.text,
     };
 
     try {
@@ -165,7 +160,6 @@ class _TicketFormPageState extends State<TicketFormPage> {
           ? '$baseUrl/ticket/api/${widget.ticket!.id}/update/'
           : '$baseUrl/ticket/api/tickets/create/';
 
-      // Kirim payload manual yang sudah dikonversi ke String
       final response = await request.post(url, payload);
 
       if (!mounted) return;
@@ -200,8 +194,6 @@ class _TicketFormPageState extends State<TicketFormPage> {
       _showErrorSnackBar('An error occurred: $e');
     }
   }
-
-  // ========== UI HELPERS ==========
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
@@ -252,13 +244,10 @@ class _TicketFormPageState extends State<TicketFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Ambil CookieRequest dari Provider
     final request = context.watch<CookieRequest>();
 
-    // 2. Load Places jika belum pernah diload
     if (!_hasFetchedPlaces) {
       _hasFetchedPlaces = true;
-      // Gunakan Future.microtask atau addPostFrameCallback agar aman
       Future.microtask(() => _loadPlaces(request));
     }
 
@@ -267,7 +256,7 @@ class _TicketFormPageState extends State<TicketFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Edit Ticket' : 'Book New Ticket'),
-        backgroundColor: Colors.blue.shade600,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -402,7 +391,7 @@ class _TicketFormPageState extends State<TicketFormPage> {
 
                     const SizedBox(height: 20),
 
-                    // Ticket Quantity Label
+                    // Ticket Quantity
                     const Text(
                       'Ticket Quantity',
                       style: TextStyle(
@@ -413,44 +402,39 @@ class _TicketFormPageState extends State<TicketFormPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    // --- MODIFIKASI INPUT QUANTITY ---
                     TextFormField(
                       controller: _ticketQuantityController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
+                        hintText: '1',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
                           horizontal: 16,
-                          vertical: 16,
                         ),
-                        // Spinner Arrows di sebelah kanan
-                        suffixIcon: SizedBox(
-                          height: 40, // Batasi tinggi agar pas di dalam input
-                          width: 30,
+                        suffixIcon: Container(
+                          width: 40,
+                          height: 45,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Panah Atas
                               Expanded(
                                 child: InkWell(
-                                  onTap: _increaseQuantity,
+                                  onTap: _incrementQuantity,
                                   child: const Icon(
                                     Icons.arrow_drop_up,
                                     size: 24,
-                                    color: Colors.grey,
                                   ),
                                 ),
                               ),
-                              // Panah Bawah
                               Expanded(
                                 child: InkWell(
-                                  onTap: _decreaseQuantity,
+                                  onTap: _decrementQuantity,
                                   child: const Icon(
                                     Icons.arrow_drop_down,
                                     size: 24,
-                                    color: Colors.grey,
                                   ),
                                 ),
                               ),
@@ -458,16 +442,23 @@ class _TicketFormPageState extends State<TicketFormPage> {
                           ),
                         ),
                       ),
-                      // Update total price saat diketik manual
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Required';
-                        final n = int.tryParse(value);
-                        if (n == null || n < 1) return 'Min 1';
-                        if (n > 100) return 'Max 100';
+                        if (value == null || value.isEmpty) {
+                          return 'Required';
+                        }
+                        final quantity = int.tryParse(value);
+                        if (quantity == null || quantity < 1) {
+                          return 'Min 1';
+                        }
+                        if (quantity > 100) {
+                          return 'Max 100';
+                        }
                         return null;
                       },
                     ),
+
+                    const SizedBox(height: 20),
 
                     // Total Price Display
                     const Text(
@@ -527,13 +518,13 @@ class _TicketFormPageState extends State<TicketFormPage> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton(
-                            // Panggil submitForm dengan passing request
                             onPressed: _isLoading
                                 ? null
                                 : () => _submitForm(request),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.blue.shade600,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

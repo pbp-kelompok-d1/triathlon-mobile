@@ -1,7 +1,23 @@
 // lib/ticket/models/ticket_model.dart
-import '../../../models/place.dart';
+import '../../models/place.dart'; 
 
-// ============ USER & PROFILE ============
+// Utility class for parsing
+class ParseUtils {
+  static int toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static double toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+}
+
+// User & Profile Model
 class User {
   final int id;
   final String username;
@@ -17,9 +33,9 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      username: json['username'],
-      email: json['email'],
+      id: ParseUtils.toInt(json['id']),
+      username: json['username']?.toString() ?? 'Unknown',
+      email: json['email']?.toString() ?? '',
       profile: json['profile'] != null ? Profile.fromJson(json['profile']) : null,
     );
   }
@@ -47,9 +63,9 @@ class Profile {
 
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
-      id: json['id'],
-      role: json['role'],
-      phoneNumber: json['phone_number'],
+      id: ParseUtils.toInt(json['id']),
+      role: json['role']?.toString(),
+      phoneNumber: json['phone_number']?.toString(),
     );
   }
 
@@ -66,7 +82,7 @@ class Profile {
   }
 }
 
-// ============ TICKET ============
+// Ticket Model
 class Ticket {
   final int id;
   final String customerName;
@@ -87,15 +103,30 @@ class Ticket {
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
+    // Handling jika Place berbentuk Map (Object) atau Null
+    // Jika API error dan place null, kita buat dummy place agar aplikasi tidak crash
+    Place parsedPlace;
+    if (json['place'] != null && json['place'] is Map<String, dynamic>) {
+       parsedPlace = Place.fromJson(json['place']);
+    } else {
+       // Placeholder jika data place rusak/hanya ID
+       parsedPlace = Place(
+         id: 0, 
+         name: 'Unknown Place', 
+         price: '0', 
+         description: '', 
+         city: '', 
+         genre: ''
+       );
+    }
+
     return Ticket(
-      id: json['id'],
-      customerName: json['customer_name'],
-      place: Place.fromJson(json['place']),
-      bookingDate: DateTime.parse(json['booking_date']),
-      ticketQuantity: json['ticket_quantity'],
-      totalPrice: (json['total_price'] is int)
-          ? (json['total_price'] as int).toDouble()
-          : double.parse(json['total_price'].toString()),
+      id: ParseUtils.toInt(json['id']),
+      customerName: json['customer_name']?.toString() ?? 'No Name',
+      place: parsedPlace,
+      bookingDate: DateTime.tryParse(json['booking_date'].toString()) ?? DateTime.now(),
+      ticketQuantity: ParseUtils.toInt(json['ticket_quantity']),
+      totalPrice: ParseUtils.toDouble(json['total_price']),
       user: json['user'] != null ? User.fromJson(json['user']) : null,
     );
   }
@@ -112,7 +143,6 @@ class Ticket {
     };
   }
 
-  // Helper untuk mendapatkan status tiket
   String getStatus() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -128,7 +158,7 @@ class Ticket {
   }
 }
 
-// ============ TICKET REQUEST ============
+// Ticket Request untuk membuat/mengedit tiket
 class TicketRequest {
   final String customerName;
   final int placeId;
@@ -145,7 +175,7 @@ class TicketRequest {
   Map<String, dynamic> toJson() {
     return {
       'customer_name': customerName,
-      'place': placeId,
+      'place': placeId, 
       'booking_date': bookingDate,
       'ticket_quantity': ticketQuantity,
     };
