@@ -18,6 +18,11 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../../shop/models/product.dart';
+import '../../shop/screens/product_detail.dart';
+import '../../place/models/place.dart';
+import '../../place/screens/place_detail_screen.dart';
+import '../../place/services/place_service.dart';
 import '../models/forum_post.dart';
 import '../models/forum_reply.dart';
 import '../services/forum_service.dart';
@@ -828,91 +833,189 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        // Linked Product
+        // Linked Product - Clickable to navigate to ProductDetailPage
         if (productId != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.shopping_bag, color: Colors.green[700], size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Linked Product',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
-                          fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () => _navigateToProductDetail(productId),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.shopping_bag, color: Colors.green[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Linked Product',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Product ID: $productId',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.green[900],
+                        Text(
+                          'Tap to view product details',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.green[900],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                // TODO: Add navigation to product detail
-                Icon(Icons.arrow_forward_ios, color: Colors.green[700], size: 16),
-              ],
+                  Icon(Icons.arrow_forward_ios, color: Colors.green[700], size: 16),
+                ],
+              ),
             ),
           ),
         
-        // Linked Location
+        // Linked Location - Clickable to navigate to PlaceDetailScreen
         if (locationId != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.blue[700], size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Linked Location',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () => _navigateToPlaceDetail(locationId),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.location_on, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Linked Location',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[700],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Location ID: $locationId',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.blue[900],
+                        Text(
+                          'Tap to view location details',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue[900],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                // TODO: Add navigation to place detail
-                Icon(Icons.arrow_forward_ios, color: Colors.blue[700], size: 16),
-              ],
+                  Icon(Icons.arrow_forward_ios, color: Colors.blue[700], size: 16),
+                ],
+              ),
             ),
           ),
         const SizedBox(height: 8),
       ],
     );
+  }
+
+  // ===========================================================================
+  // Navigation Methods for Linked Content
+  // ===========================================================================
+
+  /// Navigate to ProductDetailPage by fetching the product from API
+  Future<void> _navigateToProductDetail(String productId) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    
+    try {
+      final request = context.read<CookieRequest>();
+      // Fetch all products and find the matching one
+      final response = await request.get('$baseUrl/shop/api/products/');
+      
+      List<dynamic> listData = [];
+      if (response is List) {
+        listData = response;
+      } else if (response is Map<String, dynamic>) {
+        final possible = response['data'] ?? response['results'];
+        if (possible is List) listData = possible;
+      }
+      
+      // Find the product by ID
+      final productJson = listData.firstWhere(
+        (json) => json['id'] == productId,
+        orElse: () => null,
+      );
+      
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      
+      if (productJson != null) {
+        final product = Product.fromJson(productJson);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product not found')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading product: $e')),
+      );
+    }
+  }
+
+  /// Navigate to PlaceDetailScreen by fetching the place from API
+  Future<void> _navigateToPlaceDetail(int locationId) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    
+    try {
+      final placeService = PlaceService();
+      final places = await placeService.fetchPlaces();
+      
+      // Find the place by ID
+      final place = places.firstWhere(
+        (p) => p.id == locationId,
+        orElse: () => throw Exception('Place not found'),
+      );
+      
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PlaceDetailScreen(place: place),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading location: $e')),
+      );
+    }
   }
 
   /// Build stats row (likes, views)

@@ -26,6 +26,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -217,27 +218,50 @@ class _ForumListPageState extends State<ForumListPage> {
     // -------------------------------------------------------------------------
     // Sorting
     // -------------------------------------------------------------------------
-    // Always show pinned posts first, then apply selected sort
-    filtered.sort((a, b) {
-      // Pinned posts always come first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      
-      // Then apply selected sort order
-      switch (_sortBy) {
-        case 'views':
-          return b.postViews.compareTo(a.postViews); // Descending
-        case 'likes':
-          return b.likeCount.compareTo(a.likeCount); // Descending
-        case 'oldest':
-          return a.createdAt.compareTo(b.createdAt); // Ascending
-        case 'recent':
-        default:
-          return b.createdAt.compareTo(a.createdAt); // Descending
-      }
-    });
+    // Django API already returns posts sorted by: -is_pinned, -last_activity
+    // So for 'recent' we preserve the original order from the API
+    // For other sorts, we apply client-side sorting
+    if (_sortBy != 'recent') {
+      filtered.sort((a, b) {
+        // Pinned posts always come first
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        
+        // Then apply selected sort order
+        switch (_sortBy) {
+          case 'views':
+            return b.postViews.compareTo(a.postViews); // Descending
+          case 'likes':
+            return b.likeCount.compareTo(a.likeCount); // Descending
+          case 'oldest':
+            // Parse date strings for proper comparison
+            final dateA = _parseDate(a.createdAt);
+            final dateB = _parseDate(b.createdAt);
+            return dateA.compareTo(dateB); // Ascending
+          default:
+            return 0;
+        }
+      });
+    }
 
     return filtered;
+  }
+
+  /// Parse a date string from Django API (e.g., "Dec 14, 2024")
+  /// Returns epoch 0 if parsing fails to avoid crashes
+  DateTime _parseDate(String dateStr) {
+    try {
+      // Django returns format like "Dec 14, 2024"
+      return DateFormat('MMM dd, yyyy').parse(dateStr);
+    } catch (e) {
+      // Fallback: try ISO format in case API changes
+      try {
+        return DateTime.parse(dateStr);
+      } catch (e) {
+        // Return epoch 0 as fallback to avoid crashes
+        return DateTime(1970, 1, 1);
+      }
+    }
   }
 
   /// Clear all filters and reset to default state
