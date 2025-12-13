@@ -25,6 +25,9 @@ class MyHomePage extends StatelessWidget {
     if (request.jsonData['username'] != null) {
       username = request.jsonData['username'].toString();
     }
+    if (request.jsonData['first_name'] != null){
+
+    }
 
     return Scaffold(
       appBar: AppBar(
