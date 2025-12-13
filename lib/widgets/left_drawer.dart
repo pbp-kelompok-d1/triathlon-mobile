@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-import '../constants.dart';
-import '../screens/login.dart';
-import '../screens/menu.dart';
-import '../screens/product_form.dart';
-import '../screens/product_list.dart';
+import 'package:triathlon_mobile/constants.dart';
+import 'package:triathlon_mobile/screens/login.dart';
+import 'package:triathlon_mobile/screens/menu.dart';
+import '../forum/screens/forum_list.dart';
+import '../ticket/screens/ticket_list_page.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
+import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
+ // ← Import admin dashboard
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -14,7 +17,6 @@ class LeftDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
   // Reuse the same CookieRequest that login.dart seeded so logout works consistently.
-  final request = context.read<CookieRequest>();
 
     return Drawer(
       child: ListView(
@@ -26,7 +28,7 @@ class LeftDrawer extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'Triathlon Gear Hub',
+                  'Triathlon',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -54,74 +56,55 @@ class LeftDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const MyHomePage(),
+                    builder: (context) => MyHomePage(),
                   ));
             },
           ),
           ListTile(
-            leading: const Icon(Icons.shopping_bag),
-            title: const Text('All Gear'),
+            leading: const Icon(Icons.nordic_walking_sharp),
+            title: const Text('Activity'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.all),
+                  builder: (context) => const ActivityMenu(),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.inventory_2),
-            title: const Text('My Gear'),
+            leading: const Icon(Icons.shopify_sharp),
+            title: const Text('Shop'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductListPage(mode: ProductListMode.mine),
+                  builder: (context) => const ShopPage(),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.add_circle),
-            title: const Text('List New Gear'),
+            leading: const Icon(Icons.forum),
+            title: const Text('Forum'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ForumListPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.confirmation_num),
+            title: const Text('My Tickets'),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProductFormPage(),
+                  builder: (context) => const TicketListPage(),
                 ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
-            onTap: () async {
-              // Calling the Django logout endpoint clears both session + cookies in one go.
-              final response = await request.logout('$baseUrl/auth/logout/');
-
-              if (!context.mounted) return;
-
-              String logoutMessage = 'Logged out';
-              if (response['message'] != null) {
-                logoutMessage = response['message'];
-              }
-
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(logoutMessage),
-                  ),
-                );
-
-              // Drop the entire navigation stack so the login screen is the only page left.
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
               );
             },
           ),
