@@ -4,6 +4,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import '../widgets/product_card.dart';
+import 'package:triathlon_mobile/user_profile/widgets/profile_drawer.dart';
 
 class MyHomePage extends StatelessWidget {
   MyHomePage({super.key});
@@ -24,6 +25,9 @@ class MyHomePage extends StatelessWidget {
     if (request.jsonData['username'] != null) {
       username = request.jsonData['username'].toString();
     }
+    if (request.jsonData['first_name'] != null){
+
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -35,8 +39,23 @@ class MyHomePage extends StatelessWidget {
           ),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          Builder(
+            builder: (context) {
+              return IconButton(
+                // Ikon statis, sama untuk semua user
+                icon: Icon(Icons.person_rounded, size: 30, color: Colors.white,),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+              );
+            },
+          ),
+          const SizedBox(width: 8), // Sedikit jarak dari kanan
+        ],
       ),
       drawer: LeftDrawer(),
+      endDrawer: const CustomRightDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

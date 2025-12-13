@@ -18,7 +18,7 @@ class Product {
     required this.description,
     required this.price,
     required this.stock,
-    required this.category,
+    required this.category, 
     required this.thumbnail,
   });
 
