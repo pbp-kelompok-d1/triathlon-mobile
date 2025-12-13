@@ -43,6 +43,9 @@ class ForumReply {
   String authorRole;     // Author's role (USER, ADMIN, SELLER, FACILITY_ADMIN)
   int totalPosts;        // Author's total post count (for reputation display)
 
+  String postId;      // ID post induk
+  String postTitle;   // Judul post induk
+  String postCategory; // Kategori post (opsional, buat badge)
   // ---------------------------------------------------------------------------
   // Quote Information (optional)
   // ---------------------------------------------------------------------------
@@ -61,6 +64,9 @@ class ForumReply {
     required this.authorInitial,
     required this.authorRole,
     required this.totalPosts,
+    required this.postId,      // Wajib
+    required this.postTitle,   // Wajib
+    this.postCategory = '',
     this.quoteInfo,
   });
 
@@ -74,6 +80,9 @@ class ForumReply {
         authorInitial: json["author_initial"],
         authorRole: json["author_role"],
         totalPosts: json["total_posts"],
+        postId: json["post_id"]?.toString() ?? "",
+        postTitle: json["post_title"] ?? "Unknown Post",
+        postCategory: json["post_sport_category"] ?? "",
         quoteInfo: json["quote_info"] == null
             ? null
             : QuoteInfo.fromJson(json["quote_info"]),
@@ -89,6 +98,9 @@ class ForumReply {
         "author_initial": authorInitial,
         "author_role": authorRole,
         "total_posts": totalPosts,
+        "post_id": postId,
+        "post_title": postTitle,
+        "post_sport_category": postCategory,
         "quote_info": quoteInfo?.toJson(),
       };
 

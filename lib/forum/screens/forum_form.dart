@@ -40,12 +40,28 @@ class _ForumFormPageState extends State<ForumFormPage> {
   String _sportCategory = 'running';
   
   // Optional linking fields (new)
+  // These fields are shown/hidden based on the selected category
+  // (matching Django's category-dependent field visibility)
   String _productId = '';      // UUID string for product linking
   String _locationId = '';     // Integer string for location linking
   bool _isPinned = false;      // Admin-only: pin post toggle
   
   // Loading state
   bool _isLoading = false;
+
+  // ===========================================================================
+  // Category-Dependent Field Visibility Helpers
+  // ===========================================================================
+  // These helpers determine when to show Product ID and Location ID fields
+  // matching the Django behavior where fields appear based on category selection
+  
+  /// Returns true if Product ID field should be shown
+  /// Product ID is only relevant for 'product_review' category posts
+  bool get _shouldShowProductIdField => _category == 'product_review';
+  
+  /// Returns true if Location ID field should be shown
+  /// Location ID is only relevant for 'location_review' category posts
+  bool get _shouldShowLocationIdField => _category == 'location_review';
 
   // ===========================================================================
   // Category Options (matching Django choices)
@@ -288,62 +304,70 @@ class _ForumFormPageState extends State<ForumFormPage> {
               const SizedBox(height: 20),
 
               // -----------------------------------------------------------------
-              // Product ID Field (Optional - for Product Reviews)
+              // Product ID Field (Conditional - Only for Product Reviews)
               // -----------------------------------------------------------------
-              _buildSectionTitle('Link to Product (Optional)'),
-              const SizedBox(height: 4),
-              Text(
-                'Enter product UUID for product reviews',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  prefixIcon: const Icon(Icons.shopping_bag_outlined),
+              // This field is only shown when category is 'product_review'
+              // matching Django's category-dependent field visibility behavior
+              if (_shouldShowProductIdField) ...[
+                _buildSectionTitle('Link to Product (Optional)'),
+                const SizedBox(height: 4),
+                Text(
+                  'Enter product UUID for product reviews',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-                onChanged: (value) => _productId = value,
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 8),
+                TextFormField(
+                  decoration: InputDecoration(
+                    hintText: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    prefixIcon: const Icon(Icons.shopping_bag_outlined),
+                  ),
+                  onChanged: (value) => _productId = value,
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // -----------------------------------------------------------------
-              // Location ID Field (Optional - for Location Reviews)
+              // Location ID Field (Conditional - Only for Location Reviews)
               // -----------------------------------------------------------------
-              _buildSectionTitle('Link to Location (Optional)'),
-              const SizedBox(height: 4),
-              Text(
-                'Enter location/place ID for location reviews',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'e.g., 42',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  prefixIcon: const Icon(Icons.location_on_outlined),
+              // This field is only shown when category is 'location_review'
+              // matching Django's category-dependent field visibility behavior
+              if (_shouldShowLocationIdField) ...[
+                _buildSectionTitle('Link to Location (Optional)'),
+                const SizedBox(height: 4),
+                Text(
+                  'Enter location/place ID for location reviews',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-                onChanged: (value) => _locationId = value,
-                validator: (value) {
-                  if (value != null && value.trim().isNotEmpty) {
-                    // Validate it's a valid integer
-                    if (int.tryParse(value.trim()) == null) {
-                      return 'Please enter a valid location ID (number)';
+                const SizedBox(height: 8),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: 'e.g., 42',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                  ),
+                  onChanged: (value) => _locationId = value,
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      // Validate it's a valid integer
+                      if (int.tryParse(value.trim()) == null) {
+                        return 'Please enter a valid location ID (number)';
+                      }
                     }
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // -----------------------------------------------------------------
               // Pin Post Toggle (Admin Only)

@@ -1199,6 +1199,12 @@ class _ForumListPageState extends State<ForumListPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  // ---------------------------------------------------------------------------
+                  // Role Badge - Shows user role (Admin, Seller, Facility Admin, User)
+                  // ---------------------------------------------------------------------------
+                  // Matches Django's display of role badges in forum post cards
+                  _buildRoleBadge(post.authorRole),
                   const Spacer(),
                   // Stats
                   _buildStatItem(Icons.visibility, '${post.postViews}'),
@@ -1274,5 +1280,60 @@ class _ForumListPageState extends State<ForumListPage> {
       default:
         return const Color(0xFF1D4ED8);
     }
+  }
+
+  // ===========================================================================
+  // Role Badge Widget
+  // ===========================================================================
+  // Displays the user's role as a small colored badge
+  // Matches Django's display of role badges in forum post cards
+  
+  /// Build a role badge widget showing the author's role
+  /// Color-coded to match Django:
+  /// - ADMIN: Red
+  /// - SELLER: Green
+  /// - FACILITY_ADMIN: Blue
+  /// - USER: Grey
+  Widget _buildRoleBadge(String role) {
+    Color bgColor;
+    Color textColor;
+    String label;
+    
+    switch (role) {
+      case 'ADMIN':
+        bgColor = Colors.red[100]!;
+        textColor = Colors.red[800]!;
+        label = 'Admin';
+        break;
+      case 'SELLER':
+        bgColor = Colors.green[100]!;
+        textColor = Colors.green[800]!;
+        label = 'Seller';
+        break;
+      case 'FACILITY_ADMIN':
+        bgColor = Colors.blue[100]!;
+        textColor = Colors.blue[800]!;
+        label = 'Facility';
+        break;
+      default:
+        // For regular users, don't show a badge (matches Django behavior)
+        return const SizedBox.shrink();
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+      ),
+    );
   }
 }
