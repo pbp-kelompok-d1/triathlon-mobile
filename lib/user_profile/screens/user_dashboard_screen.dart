@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // Import intl for date & currency formatting
+
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/screens/edit_profile_screen.dart';
 import 'package:triathlon_mobile/forum/models/forum_post.dart';
 import 'package:triathlon_mobile/forum/models/forum_reply.dart';
 import 'package:triathlon_mobile/shop/models/product.dart';
+import 'package:triathlon_mobile/forum/screens/forum_detail.dart';
+import 'package:triathlon_mobile/forum/screens/forum_form.dart';
+import 'package:triathlon_mobile/forum/screens/forum_list.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
+import 'package:triathlon_mobile/shop/screens/product_detail.dart'; // Tambahkan ini untuk navigasi detail produk
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -29,6 +36,70 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+  }
+
+  // --- HELPER FORMATTERS ---
+  
+  String _formatDate(String dateString) {
+    if (dateString.isEmpty) return 'Unknown Date';
+    try {
+      final DateTime date = DateTime.parse(dateString).toLocal();
+      return DateFormat('d MMM yyyy, HH:mm').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  // Helper untuk format Rupiah (Rp 15.000)
+  String _formatCurrency(double price) {
+    return NumberFormat.currency(
+      locale: 'id_ID', 
+      symbol: 'Rp ', 
+      decimalDigits: 0
+    ).format(price);
+  }
+
+  // --- NAVIGATION HELPERS ---
+  
+  void _navigateToPostDetail(String postId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ForumDetailPage(postId: postId),
+      ),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToProductDetail(Product product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailPage(product: product),
+      ),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToForum() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForumListPage()),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToCreatePost() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ForumFormPage(),
+      ),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToShop() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ShopPage()),
+    ).then((_) => _fetchDashboardData());
   }
 
   Future<void> _fetchDashboardData() async {
@@ -77,7 +148,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
-          // AppBar with gradient background
+          // AppBar
           SliverAppBar(
             expandedHeight: 200,
             floating: false,
@@ -106,7 +177,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Decorative circles
                     Positioned(
                       top: -50,
                       right: -50,
@@ -196,7 +266,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           const SizedBox(height: 12),
           
-          // SCROLLABLE FILTER CHIPS
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -213,7 +282,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           const SizedBox(height: 12),
           
-          // DROPDOWN FILTER
           DropdownButtonFormField<String>(
             value: _selectedCategory.isEmpty ? null : _selectedCategory,
             decoration: InputDecoration(
@@ -288,7 +356,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               _buildRepliesSection(),
             if (_selectedView == 'all' || _selectedView == 'wishlist')
               _buildWishlistSection(),
-            const SizedBox(height: 40), // Spacer Bottom
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -325,9 +393,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             icon: Icons.article_outlined,
             title: 'No Posts Found',
             subtitle: 'You haven\'t created any forum posts yet.',
+            actionLabel: 'Create a Post',
+            onActionPressed: _navigateToCreatePost,
           )
         else
-          // Gunakan ListView.separated agar tidak nabrak
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -346,7 +415,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {},
+        onTap: () => _navigateToPostDetail(post.id),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -393,7 +462,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   Icon(Icons.access_time_rounded, size: 16, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    post.createdAt,
+                    _formatDate(post.createdAt),
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
@@ -453,6 +522,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             icon: Icons.reply_outlined,
             title: 'No Replies Found',
             subtitle: 'You haven\'t replied to any posts yet.',
+            actionLabel: 'Browse Forum',
+            onActionPressed: _navigateToForum,
           )
         else
           ListView.separated(
@@ -472,44 +543,76 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       elevation: 2,
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: const Border(
-                  left: BorderSide(color: primaryColor, width: 4),
-                ),
+      child: InkWell(
+        onTap: () {
+          if (reply.postId.isNotEmpty) {
+            _navigateToPostDetail(reply.postId);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cannot find original post')),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.reply, size: 14, color: Colors.grey.shade500),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Replied to: ${reply.postTitle}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                '"${reply.content}"',
-                style: const TextStyle(
-                  fontStyle: FontStyle.italic,
-                  fontSize: 15,
-                  height: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.access_time_rounded, size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 4),
-                Text(
-                  reply.createdAt,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: const Border(
+                    left: BorderSide(color: primaryColor, width: 4),
                   ),
                 ),
-              ],
-            ),
-          ],
+                child: Text(
+                  '"${reply.content}"',
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDate(reply.createdAt),
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -545,12 +648,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             icon: Icons.favorite_border_rounded,
             title: 'Wishlist is Empty',
             subtitle: 'You haven\'t added any products to your wishlist yet.',
+            actionLabel: 'Browse Shop',
+            onActionPressed: _navigateToShop,
           )
         else
           // RESPONSIF GRID LAYOUT
           LayoutBuilder(
             builder: (context, constraints) {
-              // Jika layar lebar (>600), 3 kolom. Jika HP biasa, 2 kolom.
               final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
               
               return GridView.builder(
@@ -558,7 +662,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 0.75, // Disesuaikan agar card tidak terlalu panjang
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
@@ -573,34 +677,54 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 
+  // --- UPDATED WISHLIST CARD WITH IMAGE AND FORMATTED PRICE ---
   Widget _buildWishlistCard(Product product) {
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {},
+        onTap: () => _navigateToProductDetail(product), // Redirect ke Product Detail
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- IMAGE SECTION ---
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.shopping_bag_rounded,
-                    size: 48,
-                    color: primaryColor,
-                  ),
-                ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: product.thumbnail.isNotEmpty
+                    ? Image.network(
+                        product.thumbnail,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback jika gambar error/gagal load
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        // Fallback jika thumbnail kosong
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.shopping_bag_rounded,
+                            size: 48,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ),
               ),
             ),
+            
+            // --- DETAILS SECTION ---
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -624,8 +748,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // --- FORMATTED PRICE ---
                   Text(
-                    'Rp ${product.price.toStringAsFixed(0)}',
+                    _formatCurrency(product.price), // Pakai helper baru
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: primaryColor,
@@ -645,6 +770,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     required IconData icon,
     required String title,
     required String subtitle,
+    String? actionLabel,
+    VoidCallback? onActionPressed,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -689,6 +816,27 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               fontSize: 14,
             ),
           ),
+          if (actionLabel != null && onActionPressed != null) ...[
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onActionPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                elevation: 0,
+              ),
+              child: Text(
+                actionLabel,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
