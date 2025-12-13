@@ -126,7 +126,7 @@ class TicketCard extends StatelessWidget {
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Edit'),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.green.shade600,
+                      foregroundColor: Colors.amber.shade700,
                     ),
                   ),
                   TextButton.icon(
