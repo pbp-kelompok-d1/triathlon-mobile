@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // Import intl
+
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/models/dashboard_data.dart';
 import 'package:triathlon_mobile/user_profile/screens/edit_profile_screen.dart';
-import '../../shop/models/product.dart';
-import '../../forum/models/forum_post.dart';
+import 'package:triathlon_mobile/shop/models/product.dart';
+import 'package:triathlon_mobile/forum/models/forum_post.dart';
+
+// --- IMPORT NAVIGASI ---
+import 'package:triathlon_mobile/forum/screens/forum_detail.dart';
+import 'package:triathlon_mobile/forum/screens/forum_form.dart';
+import 'package:triathlon_mobile/shop/screens/product_detail.dart';
+import 'package:triathlon_mobile/shop/screens/product_form.dart'; // Pastikan file ini ada
 
 class SellerDashboardScreen extends StatefulWidget {
   const SellerDashboardScreen({super.key});
@@ -15,8 +23,7 @@ class SellerDashboardScreen extends StatefulWidget {
 }
 
 class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
-  // Warna Utama Seller (Hijau)
-  static const Color primaryGreen = Color(0xFF2E7D32); // Green 800 shade style
+  static const Color primaryGreen = Color(0xFF2E7D32);
   
   String _selectedView = 'all';
   String _selectedCategory = '';
@@ -29,9 +36,58 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     _fetchDashboardData();
   }
 
+  // --- HELPERS FORMATTER ---
+  
+  String _formatCurrency(double price) {
+    return NumberFormat.currency(
+      locale: 'id_ID', 
+      symbol: 'Rp ', 
+      decimalDigits: 0
+    ).format(price);
+  }
+
+  String _formatDate(String dateString) {
+    if (dateString.isEmpty) return 'Unknown Date';
+    try {
+      final DateTime date = DateTime.parse(dateString).toLocal();
+      return DateFormat('d MMM yyyy, HH:mm').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  // --- NAVIGATION ---
+
+  void _navigateToPostDetail(String postId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ForumDetailPage(postId: postId)),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToProductDetail(Product product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProductDetailPage(product: product)),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToCreatePost() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForumFormPage()),
+    ).then((_) => _fetchDashboardData());
+  }
+
+  void _navigateToAddProduct() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProductFormPage()),
+    ).then((_) => _fetchDashboardData());
+  }
+
   Future<void> _fetchDashboardData() async {
     setState(() => _isLoading = true);
-    
     final request = context.read<CookieRequest>();
     
     try {
@@ -63,7 +119,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         color: primaryGreen,
         child: CustomScrollView(
           slivers: [
-            // 1. SLIVER APP BAR (Header Hijau Keren)
+            // SLIVER APP BAR
             SliverAppBar(
               expandedHeight: 200,
               floating: false,
@@ -86,13 +142,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       end: Alignment.bottomRight,
                       colors: [
                         primaryGreen,
-                        const Color(0xFF66BB6A), // Lighter Green
+                        const Color(0xFF66BB6A),
                       ],
                     ),
                   ),
                   child: Stack(
                     children: [
-                      // Dekorasi Lingkaran
                       Positioned(
                         top: -50,
                         right: -50,
@@ -137,7 +192,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               ],
             ),
 
-            // 2. CONTENT BODY
+            // CONTENT
             SliverToBoxAdapter(
               child: Column(
                 children: [
@@ -184,7 +239,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           ),
           const SizedBox(height: 12),
           
-          // Filter Chips Scrollable
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -199,7 +253,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           ),
           const SizedBox(height: 12),
           
-          // Dropdown Filter
           DropdownButtonFormField<String>(
             value: _selectedCategory.isEmpty ? null : _selectedCategory,
             decoration: InputDecoration(
@@ -271,11 +324,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          if (_selectedView == 'all' || _selectedView == 'posts')
-            _buildPostsSection(),
-          
           if (_selectedView == 'all' || _selectedView == 'products')
             _buildProductsSection(),
+            
+          if (_selectedView == 'all' || _selectedView == 'posts')
+            _buildPostsSection(),
             
           const SizedBox(height: 40),
         ],
@@ -283,6 +336,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
+  // --- POSTS SECTION ---
   Widget _buildPostsSection() {
     final posts = _dashboardData?.posts ?? [];
     
@@ -313,9 +367,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             title: 'No Posts Found',
             subtitle: 'You haven\'t created any forum posts yet.',
             buttonText: 'Create a Post',
-            onButtonPressed: () {
-              // Navigate logic
-            },
+            onButtonPressed: _navigateToCreatePost, 
           )
         else
           ListView.separated(
@@ -336,7 +388,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {},
+        onTap: () => _navigateToPostDetail(post.id),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -356,8 +408,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildTag(post.category, primaryGreen),
-                  _buildTag(post.sportCategory, Colors.blue),
+                  _buildTag(post.categoryDisplay, primaryGreen),
+                  _buildTag(post.sportCategoryDisplay, Colors.blue),
                 ],
               ),
               const SizedBox(height: 12),
@@ -367,6 +419,25 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey.shade700, height: 1.4),
               ),
+              const SizedBox(height: 12),
+              // --- DETAIL VIEWS & DATE (ADDED) ---
+              Row(
+                children: [
+                  Icon(Icons.visibility_rounded, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${post.postViews} views',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.access_time_rounded, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDate(post.createdAt),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -374,6 +445,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
+  // --- PRODUCTS SECTION ---
   Widget _buildProductsSection() {
     final products = _dashboardData?.sellerProducts ?? [];
     
@@ -404,12 +476,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             title: 'No Products Found',
             subtitle: 'You haven\'t added any products yet.',
             buttonText: 'Add a Product', 
-            onButtonPressed: () {
-              // Navigate logic
-            },
+            onButtonPressed: _navigateToAddProduct, 
           )
         else
-          // RESPONSIF GRID
           LayoutBuilder(
             builder: (context, constraints) {
               final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
@@ -429,6 +498,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               );
             },
           ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -439,20 +509,36 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {},
+        onTap: () => _navigateToProductDetail(product),
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: primaryGreen.withOpacity(0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: const Center(
-                  child: Icon(Icons.shopping_bag, size: 48, color: primaryGreen),
-                ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: product.thumbnail.isNotEmpty
+                    ? Image.network(
+                        product.thumbnail,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: primaryGreen.withOpacity(0.1),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.shopping_bag, size: 48, color: primaryGreen),
+                        ),
+                      ),
               ),
             ),
             Padding(
@@ -477,7 +563,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Rp ${product.price}',
+                    _formatCurrency(product.price),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: primaryGreen,
@@ -550,7 +636,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               onPressed: onButtonPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryGreen,
-                foregroundColor: Colors.white, // Teks Putih
+                foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(

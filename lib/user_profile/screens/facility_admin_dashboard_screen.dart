@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // Import intl
+
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/models/dashboard_data.dart';
 import 'package:triathlon_mobile/user_profile/screens/edit_profile_screen.dart';
 import '../../ticket/models/ticket_model.dart' show Ticket;
 import '../../place/models/place.dart';
+
+// --- IMPORT SCREEN NAVIGASI ---
+import 'package:triathlon_mobile/place/screens/place_detail_screen.dart';
+import 'package:triathlon_mobile/place/screens/place_form_screen.dart';
 
 class FacilityAdminDashboardScreen extends StatefulWidget {
   const FacilityAdminDashboardScreen({super.key});
@@ -29,9 +35,33 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     _fetchDashboardData();
   }
 
+  // --- HELPER FORMAT CURRENCY ---
+  String _formatCurrency(double price) {
+    return NumberFormat.currency(
+      locale: 'id_ID', 
+      symbol: 'Rp ', 
+      decimalDigits: 0
+    ).format(price);
+  }
+
+  // --- NAVIGATION HELPERS ---
+  
+  void _navigateToFacilityDetail(Place place) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlaceDetailScreen(place: place)),
+    ).then((_) => _fetchDashboardData()); // Refresh data saat kembali
+  }
+
+  void _navigateToAddFacility() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PlaceFormScreen()),
+    ).then((_) => _fetchDashboardData()); // Refresh data saat kembali
+  }
+
   Future<void> _fetchDashboardData() async {
     setState(() => _isLoading = true);
-    
     final request = context.read<CookieRequest>();
     
     try {
@@ -63,7 +93,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
         color: primaryOrange,
         child: CustomScrollView(
           slivers: [
-            // 1. SLIVER APP BAR (Header Keren)
+            // 1. SLIVER APP BAR
             SliverAppBar(
               expandedHeight: 200,
               floating: false,
@@ -92,7 +122,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
                   ),
                   child: Stack(
                     children: [
-                      // Lingkaran Dekoratif
                       Positioned(
                         top: -50,
                         right: -50,
@@ -181,7 +210,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
           ),
           const SizedBox(height: 12),
           
-          // Filter Chips Scrollable
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -196,7 +224,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
           ),
           const SizedBox(height: 12),
           
-          // Dropdown Filter
           DropdownButtonFormField<String>(
             value: _selectedCategory.isEmpty ? null : _selectedCategory,
             decoration: InputDecoration(
@@ -284,7 +311,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
-  // --- STATS SECTION (RESPONSIVE) ---
+  // --- STATS SECTION ---
   Widget _buildStatsSection() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -316,7 +343,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
                   Expanded(
                     child: _buildStatCard(
                       title: 'Revenue',
-                      value: 'Rp ${(_dashboardData?.totalRevenueAmount ?? 0).toStringAsFixed(0)}',
+                      value: _formatCurrency(_dashboardData?.totalRevenueAmount ?? 0),
                       icon: Icons.monetization_on_rounded,
                       color: Colors.purple,
                     ),
@@ -328,7 +355,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
               const SizedBox(height: 12),
               _buildStatCard(
                 title: 'Total Revenue',
-                value: 'Rp ${(_dashboardData?.totalRevenueAmount ?? 0).toStringAsFixed(0)}',
+                value: _formatCurrency(_dashboardData?.totalRevenueAmount ?? 0),
                 icon: Icons.monetization_on_rounded,
                 color: Colors.purple,
                 fullWidth: true,
@@ -402,7 +429,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
-  // --- FACILITIES SECTION ---
+  // --- FACILITIES SECTION (NAVIGASI DITAMBAHKAN) ---
   Widget _buildFacilitiesSection() {
     final facilities = _dashboardData?.facilities ?? [];
     
@@ -428,12 +455,13 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
         ),
         const SizedBox(height: 12),
         if (facilities.isEmpty)
+          // EMPTY STATE: BUTTON NAVIGATE KE FORM ADD FACILITY
           _buildEmptyState(
             icon: Icons.location_city_outlined,
             title: 'No Facilities Found',
             subtitle: 'You are not managing any facilities yet.',
             buttonText: 'Add a Facility',
-            onButtonPressed: () {},
+            onButtonPressed: _navigateToAddFacility, // Navigasi ke Form Add
           )
         else
           ListView.separated(
@@ -448,88 +476,119 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
+  // CARD FACILITY: ONTAP NAVIGATE KE DETAIL
   Widget _buildFacilityCard(Place facility) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    // Ambil imageUrl (sesuaikan dengan nama field di model Place Anda)
+    // Di model Place.fromJson, biasanya field 'image_url' atau 'imageUrl'
+    // Pastikan di model Place Anda field-nya sesuai.
+    // Jika di DashboardData modelnya `Place`, cek apakah dia punya `imageUrl`.
+    // Kita asumsikan namanya `imageUrl` sesuai diskusi sebelumnya.
+    final imageUrl = facility.image; 
+
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () => _navigateToFacilityDetail(facility), // Navigasi ke Detail
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            facility.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- IMAGE SECTION ---
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: SizedBox(
+                height: 150,
+                width: double.infinity,
+                child: (imageUrl != null && imageUrl.isNotEmpty)
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.broken_image, color: Colors.grey, size: 40),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              _buildTag(facility.genre ?? 'General', Colors.blue),
-                              if (facility.city != null && facility.city!.isNotEmpty)
-                                _buildTag(facility.city!, Colors.grey),
-                            ],
-                          ),
-                        ],
+                          );
+                        },
+                      )
+                    : Container(
+                        color: primaryOrange.withOpacity(0.1),
+                        child: const Center(
+                          child: Icon(Icons.location_city, color: primaryOrange, size: 40),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  facility.description ?? 'No description available.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4),
-                ),
-                const SizedBox(height: 12),
-                Divider(color: Colors.grey.shade200),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Ticket Price:',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                    ),
-                    Text(
-                      'Rp ${facility.price}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: primaryOrange,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+            
+            // --- CONTENT SECTION ---
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              facility.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                _buildTag(facility.genre ?? 'General', Colors.blue),
+                                if (facility.city != null && facility.city!.isNotEmpty)
+                                  _buildTag(facility.city!, Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    facility.description ?? 'No description available.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 12),
+                  Divider(color: Colors.grey.shade200),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Ticket Price:',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                      Text(
+                        _formatCurrency(double.parse(facility.price)),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: primaryOrange,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -680,7 +739,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
                   ),
                   _buildTicketInfo(
                     label: 'Total',
-                    value: 'Rp ${ticket.totalPrice.toStringAsFixed(0)}',
+                    value: _formatCurrency(ticket.totalPrice),
                     icon: Icons.payments_outlined,
                     isPrice: true,
                   ),

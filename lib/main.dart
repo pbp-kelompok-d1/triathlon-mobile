@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
 import 'screens/login.dart';
 import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
-
 import 'screens/onboarding_page.dart';
 
 void main() {
@@ -37,7 +36,7 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const LoginPage(),
+        home: const OnboardingPage(),
       ),
     );
   }
