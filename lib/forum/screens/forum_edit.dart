@@ -17,6 +17,9 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../../shop/models/product.dart';
+import '../../place/models/place.dart';
+import '../../place/services/place_service.dart';
 import '../models/forum_post.dart';
 
 /// Screen for editing an existing forum post
@@ -39,8 +42,6 @@ class _ForumEditPageState extends State<ForumEditPage> {
   // Text controllers for form fields
   late TextEditingController _titleController;
   late TextEditingController _contentController;
-  late TextEditingController _productIdController;
-  late TextEditingController _locationIdController;
 
   // ===========================================================================
   // Form State Variables
@@ -49,6 +50,20 @@ class _ForumEditPageState extends State<ForumEditPage> {
   late String _sportCategory;
   late bool _isPinned;
   bool _isLoading = false;
+  
+  // ---------------------------------------------------------------------------
+  // Dropdown Selection State
+  // ---------------------------------------------------------------------------
+  String? _selectedProductId;   // Selected product UUID for product linking
+  int? _selectedLocationId;     // Selected location ID for location linking
+  
+  // ---------------------------------------------------------------------------
+  // Data for dropdowns (loaded from API)
+  // ---------------------------------------------------------------------------
+  List<Product> _products = [];      // All products for dropdown
+  List<Place> _places = [];          // All places for dropdown
+  bool _isLoadingProducts = false;
+  bool _isLoadingPlaces = false;
 
   // ===========================================================================
   // Category-Dependent Field Visibility Helpers
@@ -95,15 +110,71 @@ class _ForumEditPageState extends State<ForumEditPage> {
     // Initialize controllers with existing post data
     _titleController = TextEditingController(text: widget.post.title);
     _contentController = TextEditingController(text: widget.post.fullContent);
-    _productIdController = TextEditingController(text: widget.post.productId ?? '');
-    _locationIdController = TextEditingController(
-      text: widget.post.locationId?.toString() ?? '',
-    );
+    
+    // Initialize dropdown selected values from existing post
+    _selectedProductId = widget.post.productId;
+    _selectedLocationId = widget.post.locationId;
     
     // Initialize dropdown values
     _category = widget.post.category;
     _sportCategory = widget.post.sportCategory;
     _isPinned = widget.post.isPinned;
+    
+    // Load products and places for dropdown selection
+    _loadProducts();
+    _loadPlaces();
+  }
+
+  // ===========================================================================
+  // Data Loading for Dropdowns
+  // ===========================================================================
+
+  /// Load all products from API for the product dropdown
+  Future<void> _loadProducts() async {
+    setState(() => _isLoadingProducts = true);
+    try {
+      final request = context.read<CookieRequest>();
+      final response = await request.get('$baseUrl/shop/api/products/');
+      
+      List<dynamic> listData = [];
+      if (response is List) {
+        listData = response;
+      } else if (response is Map<String, dynamic>) {
+        final possible = response['data'] ?? response['results'];
+        if (possible is List) listData = possible;
+      }
+      
+      if (mounted) {
+        setState(() {
+          _products = listData.map((json) => Product.fromJson(json)).toList();
+          _isLoadingProducts = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingProducts = false);
+      }
+    }
+  }
+
+  /// Load all places from API for the location dropdown
+  Future<void> _loadPlaces() async {
+    setState(() => _isLoadingPlaces = true);
+    try {
+      final placeService = PlaceService();
+      final places = await placeService.fetchPlaces();
+      
+      if (mounted) {
+        setState(() {
+          _places = places;
+          _isLoadingPlaces = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingPlaces = false);
+      }
+    }
   }
 
   @override
@@ -111,8 +182,6 @@ class _ForumEditPageState extends State<ForumEditPage> {
     // Clean up controllers
     _titleController.dispose();
     _contentController.dispose();
-    _productIdController.dispose();
-    _locationIdController.dispose();
     super.dispose();
   }
 
@@ -141,14 +210,14 @@ class _ForumEditPageState extends State<ForumEditPage> {
         'is_pinned': _isPinned,
       };
 
-      // Add optional product_id if provided
-      if (_productIdController.text.trim().isNotEmpty) {
-        body['product_id'] = _productIdController.text.trim();
+      // Add optional product_id if selected from dropdown
+      if (_selectedProductId != null) {
+        body['product_id'] = _selectedProductId;
       }
 
-      // Add optional location_id if provided (convert to int)
-      if (_locationIdController.text.trim().isNotEmpty) {
-        body['location_id'] = _locationIdController.text.trim();
+      // Add optional location_id if selected from dropdown
+      if (_selectedLocationId != null) {
+        body['location_id'] = _selectedLocationId.toString();
       }
 
       // Send POST request to edit endpoint
@@ -365,71 +434,104 @@ class _ForumEditPageState extends State<ForumEditPage> {
               const SizedBox(height: 20),
 
               // -----------------------------------------------------------------
-              // Product ID Field (Optional - for Product Reviews)
+              // Product Dropdown (Conditional - Only for Product Reviews)
               // -----------------------------------------------------------------
-              // -----------------------------------------------------------------
-              // Product ID Field (Conditional - Only for Product Reviews)
-              // -----------------------------------------------------------------
-              // This field is only shown when category is 'product_review'
-              // matching Django's category-dependent field visibility behavior
+              // Dropdown to select a product from the list of available products
+              // Only shown when category is 'product_review'
               if (_shouldShowProductIdField) ...[
                 _buildSectionTitle('Link to Product (Optional)'),
                 const SizedBox(height: 4),
                 Text(
-                  'Enter product UUID for product reviews',
+                  'Select a product to review',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _productIdController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., 123e4567-e89b-12d3-a456-426614174000',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    prefixIcon: const Icon(Icons.shopping_bag_outlined),
-                  ),
-                ),
+                _isLoadingProducts
+                    ? const Center(child: CircularProgressIndicator())
+                    : DropdownButtonFormField<String>(
+                        value: _selectedProductId,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          prefixIcon: const Icon(Icons.shopping_bag_outlined),
+                          hintText: 'Select a product',
+                        ),
+                        isExpanded: true,
+                        items: [
+                          // Add "None" option to clear selection
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('-- No product selected --'),
+                          ),
+                          // Product options from API
+                          ..._products.map((product) {
+                            return DropdownMenuItem<String>(
+                              value: product.id,
+                              child: Text(
+                                '${product.name} (${product.categoryLabel})',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedProductId = value);
+                        },
+                      ),
                 const SizedBox(height: 20),
               ],
 
               // -----------------------------------------------------------------
-              // Location ID Field (Conditional - Only for Location Reviews)
+              // Location Dropdown (Conditional - Only for Location Reviews)
               // -----------------------------------------------------------------
-              // This field is only shown when category is 'location_review'
-              // matching Django's category-dependent field visibility behavior
+              // Dropdown to select a place/location from the list of available places
+              // Only shown when category is 'location_review'
               if (_shouldShowLocationIdField) ...[
                 _buildSectionTitle('Link to Location (Optional)'),
                 const SizedBox(height: 4),
                 Text(
-                  'Enter location/place ID for location reviews',
+                  'Select a location to review',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _locationIdController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., 42',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    prefixIcon: const Icon(Icons.location_on_outlined),
-                  ),
-                  validator: (value) {
-                    if (value != null && value.trim().isNotEmpty) {
-                      // Validate it's a valid integer
-                      if (int.tryParse(value.trim()) == null) {
-                        return 'Please enter a valid location ID (number)';
-                      }
-                    }
-                    return null;
-                  },
-                ),
+                _isLoadingPlaces
+                    ? const Center(child: CircularProgressIndicator())
+                    : DropdownButtonFormField<int>(
+                        value: _selectedLocationId,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          prefixIcon: const Icon(Icons.location_on_outlined),
+                          hintText: 'Select a location',
+                        ),
+                        isExpanded: true,
+                        items: [
+                          // Add "None" option to clear selection
+                          const DropdownMenuItem<int>(
+                            value: null,
+                            child: Text('-- No location selected --'),
+                          ),
+                          // Place options from API
+                          ..._places.map((place) {
+                            return DropdownMenuItem<int>(
+                              value: place.id,
+                              child: Text(
+                                '${place.name}${place.city != null ? " - ${place.city}" : ""}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedLocationId = value);
+                        },
+                      ),
                 const SizedBox(height: 20),
               ],
 
