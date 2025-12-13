@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import '../widgets/product_card.dart';
 import 'package:triathlon_mobile/user_profile/widgets/profile_drawer.dart';
+import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
 
 class MyHomePage extends StatelessWidget {
   MyHomePage({super.key});
@@ -162,6 +163,17 @@ class MyHomePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const ShopPage()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.shopping_cart),
+                    label: const Text('Place'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PlaceListScreen()),
                       );
                     },
                   ),

@@ -1,5 +1,5 @@
 // lib/ticket/models/ticket_model.dart
-import '../../models/place.dart'; 
+import '../../place/models/place.dart'; 
 
 // Utility class for parsing
 class ParseUtils {

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:triathlon_mobile/place/screens/place_detail_screen.dart';
 import 'package:triathlon_mobile/screens/login.dart'; // Sesuaikan path login kamu
 import 'package:triathlon_mobile/place/screens/place_form_screen.dart'; // Sesuaikan path form kamu
+import 'package:triathlon_mobile/constants.dart';
 
 class PlaceListScreen extends StatefulWidget {
   const PlaceListScreen({super.key});
@@ -81,7 +82,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
               icon: const Icon(Icons.logout, color: Colors.white),
               onPressed: () async {
                 final response = await request.logout(
-                  kIsWeb ? "http://127.0.0.1:8000/auth/logout/" : "http://10.0.2.2:8000/auth/logout/"
+                  "$baseUrl/auth/logout/"
                 );
                 if (context.mounted) {
                    ScaffoldMessenger.of(context).showSnackBar(
@@ -299,7 +300,6 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
   Widget _buildFeaturedCard(Place place) {
     String? imageUrl;
     if (place.image != null && place.image!.isNotEmpty) {
-      String baseUrl = kIsWeb ? "http://127.0.0.1:8000" : "http://10.0.2.2:8000";
       imageUrl = "$baseUrl${place.image}";
     }
 
@@ -398,7 +398,6 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
   Widget _buildPlaceCard(Place place) {
     String? imageUrl;
     if (place.image != null && place.image!.isNotEmpty) {
-      String baseUrl = kIsWeb ? "http://127.0.0.1:8000" : "http://10.0.2.2:8000";
       imageUrl = "$baseUrl${place.image}";
     }
 
