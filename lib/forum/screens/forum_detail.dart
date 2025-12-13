@@ -3,13 +3,13 @@
 // =============================================================================
 // This screen displays the full details of a forum post including:
 // - Post header with title, categories, pinned status
-// - Author information with role badge
+// - Author information with role badge (clickable username → profile)
 // - Full post content
 // - Linked product/location (if any)
 // - Like/view stats
 // - Edit/Delete buttons (for author/admin)
 // - Last edited timestamp
-// - Replies section with quote support
+// - Replies section with quote support and "OP" badge
 // - Reply input form
 // =============================================================================
 
@@ -22,6 +22,7 @@ import '../models/forum_post.dart';
 import '../models/forum_reply.dart';
 import '../services/forum_service.dart';
 import 'forum_edit.dart';
+import 'forum_user_profile.dart';  // Import user profile page for navigation
 
 /// Screen for displaying forum post details and replies
 class ForumDetailPage extends StatefulWidget {
@@ -657,19 +658,39 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     );
   }
 
-  /// Build the author info section
+  // ===========================================================================
+  // Navigation Helper
+  // ===========================================================================
+
+  /// Navigate to a user's public profile page
+  /// Called when tapping on a username in the post or reply sections
+  void _navigateToUserProfile(String username) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ForumUserProfilePage(username: username),
+      ),
+    );
+  }
+
+  /// Build the author info section with clickable username
   Widget _buildAuthorSection() {
     final authorRole = _postData!['author_role'] ?? 'USER';
+    final authorUsername = _postData!['author'] ?? 'Anonymous';
+    final totalPosts = _postData!['original_poster_total_posts'] ?? 0;
     
     return Row(
       children: [
-        // Author avatar
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: _getAvatarColor(authorRole),
-          child: Text(
-            _postData!['author_initial'],
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        // Author avatar - clickable to navigate to profile
+        GestureDetector(
+          onTap: () => _navigateToUserProfile(authorUsername),
+          child: CircleAvatar(
+            radius: 20,
+            backgroundColor: _getAvatarColor(authorRole),
+            child: Text(
+              _postData!['author_initial'],
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -680,16 +701,44 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
             children: [
               Row(
                 children: [
-                  Text(
-                    _postData!['author'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  // Clickable username - navigates to user profile
+                  GestureDetector(
+                    onTap: () => _navigateToUserProfile(authorUsername),
+                    child: Text(
+                      authorUsername,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF1D4ED8),  // Blue color to indicate clickable
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   // Role badge
                   _buildRoleBadge(authorRole),
+                  const SizedBox(width: 8),
+                  // Total posts badge (user stats)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.article_outlined, size: 12, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$totalPosts posts',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 2),
@@ -925,6 +974,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   /// Build a reply card
   /// Displays the reply content with author info, optional quoted content,
   /// and action buttons (Quote, Delete)
+  /// Shows "OP" (Original Poster) badge if the reply author is the post author
   Widget _buildReplyCard(ForumReply reply, int replyNumber, String? currentUsername, String? currentUserRole) {
     // Check if current user can delete this reply
     // (authors can delete their own replies, admins can delete any)
@@ -938,6 +988,14 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     // Check if this reply is currently being quoted
     // Used to highlight the card visually when selected
     final isBeingQuoted = _quotedReply?.id == reply.id;
+    
+    // ---------------------------------------------------------------------------
+    // Check if this reply author is the Original Poster (OP)
+    // ---------------------------------------------------------------------------
+    // Compare the reply author with the post author to determine if they are the OP
+    // This helps users quickly identify when the post author is responding
+    final postAuthor = _postData?['author'] ?? '';
+    final isOriginalPoster = reply.author == postAuthor;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -959,31 +1017,85 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
             // -----------------------------------------------------------------
             Row(
               children: [
-                // Author avatar
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: _getAvatarColor(reply.authorRole),
-                  child: Text(
-                    reply.authorInitial,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                // Author avatar - clickable to navigate to profile
+                GestureDetector(
+                  onTap: () => _navigateToUserProfile(reply.author),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: _getAvatarColor(reply.authorRole),
+                    child: Text(
+                      reply.authorInitial,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Author name and date
+                // Author name, badges, and date
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      // Row with author name, OP badge, role badge, and total posts
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
-                          Text(
-                            reply.author,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          // Clickable author name - navigates to user profile
+                          GestureDetector(
+                            onTap: () => _navigateToUserProfile(reply.author),
+                            child: Text(
+                              reply.author,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1D4ED8),  // Blue to indicate clickable
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 6),
+                          // Original Poster (OP) badge - shown when reply author is post author
+                          if (isOriginalPoster)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.purple[100],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'OP',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple[800],
+                                ),
+                              ),
+                            ),
+                          // Role badge (Admin, Seller, etc.)
                           _buildRoleBadge(reply.authorRole),
+                          // Total posts badge (user stats)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.article_outlined, size: 10, color: Colors.grey[600]),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${reply.totalPosts}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           Text(

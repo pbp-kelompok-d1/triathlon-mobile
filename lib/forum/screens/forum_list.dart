@@ -19,6 +19,7 @@
 // OTHER FEATURES:
 // - Pinned posts highlighted with orange border
 // - Post cards with author info, stats, and quick actions
+// - Clickable usernames navigate to user profile
 // - Pull-to-refresh functionality
 // - Refresh after returning from detail/create/edit screens
 // - Post management options (edit/delete) via long-press or menu button
@@ -35,6 +36,7 @@ import '../services/forum_service.dart';
 import 'forum_detail.dart';
 import 'forum_edit.dart';
 import 'forum_form.dart';
+import 'forum_user_profile.dart';  // Import for user profile navigation
 
 /// Main forum listing page showing all forum posts
 class ForumListPage extends StatefulWidget {
@@ -1154,26 +1156,47 @@ class _ForumListPageState extends State<ForumListPage> {
               // ---------------------------------------------------------------
               Row(
                 children: [
-                  // Author avatar
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: _getAvatarColor(post.authorRole),
-                    child: Text(
-                      post.authorInitial,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                  // Author avatar - clickable to navigate to user profile
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForumUserProfilePage(username: post.author),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: _getAvatarColor(post.authorRole),
+                      child: Text(
+                        post.authorInitial,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Author name
-                  Text(
-                    post.author,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
+                  // Author name - clickable to navigate to user profile
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForumUserProfilePage(username: post.author),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      post.author,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        color: Color(0xFF1D4ED8),  // Blue to indicate clickable
+                      ),
                     ),
                   ),
                   const Spacer(),

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/ticket_model.dart';
-import '../../models/place.dart';
+import '../../place/models/place.dart';
 import '../../constants.dart';
 
 class TicketFormPage extends StatefulWidget {

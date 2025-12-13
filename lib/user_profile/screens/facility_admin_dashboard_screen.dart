@@ -5,7 +5,7 @@ import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/models/dashboard_data.dart';
 import 'package:triathlon_mobile/user_profile/screens/edit_profile_screen.dart';
 import '../../ticket/models/ticket_model.dart' show Ticket;
-import '../../models/place.dart';
+import '../../place/models/place.dart';
 
 class FacilityAdminDashboardScreen extends StatefulWidget {
   const FacilityAdminDashboardScreen({super.key});
