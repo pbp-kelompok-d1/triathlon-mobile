@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/models/dashboard_data.dart';
 import 'package:triathlon_mobile/user_profile/screens/edit_profile_screen.dart';
-import '../../ticket/models/ticket_model.dart' show Ticket, Place;
+import '../../ticket/models/ticket_model.dart' show Ticket;
+import '../../models/place.dart';
 
 class FacilityAdminDashboardScreen extends StatefulWidget {
   const FacilityAdminDashboardScreen({super.key});
@@ -517,7 +518,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                     ),
                     Text(
-                      'Rp ${facility.price.toStringAsFixed(0)}',
+                      'Rp ${facility.price}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

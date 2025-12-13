@@ -12,6 +12,7 @@ class CartItem {
   final double subtotal;
   final String thumbnail;
   final int stock;
+  final String? sellerUsername;
 
   CartItem({
     required this.itemId,
@@ -22,6 +23,7 @@ class CartItem {
     required this.subtotal,
     required this.thumbnail,
     required this.stock,
+    required this.sellerUsername,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
@@ -33,6 +35,7 @@ class CartItem {
     subtotal: (json["subtotal"] ?? 0).toDouble(),
     thumbnail: json["thumbnail"] ?? "",
     stock: json["stock"] ?? 0,
+    sellerUsername: json["seller_username"],
   );
 }
 
