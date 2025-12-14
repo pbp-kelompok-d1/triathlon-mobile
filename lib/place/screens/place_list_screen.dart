@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:pbp_django_auth/pbp_django_auth.dart'; // Import untuk Auth
-import 'package:provider/provider.dart'; // Import untuk Provider
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/place/models/place.dart';
+import 'package:triathlon_mobile/place/models/province_stat.dart';
 import 'package:triathlon_mobile/place/services/place_service.dart';
-import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:triathlon_mobile/place/screens/place_detail_screen.dart';
-import 'package:triathlon_mobile/screens/login.dart'; // Sesuaikan path login kamu
-import 'package:triathlon_mobile/place/screens/place_form_screen.dart'; // Sesuaikan path form kamu
+import 'package:triathlon_mobile/screens/login.dart';
+import 'package:triathlon_mobile/place/screens/place_form_screen.dart';
 import 'package:triathlon_mobile/constants.dart';
 
 class PlaceListScreen extends StatefulWidget {
@@ -22,15 +22,20 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
   List<Place> _allPlaces = [];
   List<Place> _filteredPlaces = [];
   List<Place> _featuredPlaces = [];
+  List<ProvinceStat> _provinceStats = [];
+
+  String? _provinceError;
 
   String _searchQuery = "";
   String _selectedGenre = "Semua";
   bool _isLoading = true;
+  bool _isProvinceLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadPlaces();
+    _loadProvinceStats();
   }
 
   Future<void> _loadPlaces() async {
@@ -51,6 +56,30 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
     }
   }
 
+  Future<void> _loadProvinceStats() async {
+    try {
+      final stats = await _placeService.fetchProvinceStats();
+      setState(() {
+        _provinceStats = stats;
+        _isProvinceLoading = false;
+        _provinceError = null;
+      });
+    } catch (e) {
+      setState(() {
+        _isProvinceLoading = false;
+        _provinceError = e.toString();
+      });
+    }
+  }
+
+  String? _resolveImageUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.isEmpty) return null;
+    final parsed = Uri.tryParse(rawUrl);
+    // Jika sudah absolute (https://example.com/img), pakai langsung. Jika relative, prefix dengan baseUrl.
+    if (parsed != null && parsed.hasScheme && parsed.host.isNotEmpty) return rawUrl;
+    return "$baseUrl$rawUrl";
+  }
+
   void _runFilter() {
     setState(() {
       _filteredPlaces = _allPlaces.where((place) {
@@ -60,6 +89,33 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
         return matchesSearch && matchesGenre;
       }).toList();
     });
+  }
+
+  Widget _buildBadge({required String label, Color? color, IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color ?? Colors.black.withOpacity(0.75),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: Colors.white),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -86,7 +142,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                 );
                 if (context.mounted) {
                    ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(response["message"])),
+                    SnackBar(content: Text(response['message'] ?? 'Logged out')),
                   );
                   setState(() {}); // Refresh UI
                 }
@@ -133,22 +189,25 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                   child: Stack(
                     children: [
                       Image.asset(
-                        "assets/images/hero-background2.png",
-                        fit: BoxFit.cover,
+                        'assets/images/hero-background.png',
                         width: double.infinity,
+                        fit: BoxFit.cover,
                         height: 300,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.blue[900],
+                            height: 300,
+                          );
+                        },
                       ),
-                      // Overlay Gelap
-                      Container(
-                        color: Colors.black.withOpacity(0.4),
-                      ),
-                      // Teks Judul
+                      Container(color: Colors.black.withOpacity(0.4)),
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              SizedBox(height: 40),
                               Text(
                                 "Triathlon Venues",
                                 style: TextStyle(
@@ -156,15 +215,13 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
                               SizedBox(height: 8),
                               Text(
-                                "Discover amazing locations for your next triathlon adventure.",
+                                "Discover amazing locations for your next triathlon adventure",
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
                               ),
                             ],
                           ),
@@ -178,7 +235,6 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                 SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Spacer Transparan (Supaya gambar terlihat)
                       const SizedBox(height: 260),
 
                       // KOTAK PUTIH DENGAN UJUNG MELENGKUNG
@@ -212,7 +268,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                                 const SizedBox(height: 16),
 
                                 SizedBox(
-                                  height: 220,
+                                  height: 280, // Increased height
                                   child: ListView.builder(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _featuredPlaces.length,
@@ -233,8 +289,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                                   contentPadding: const EdgeInsets.symmetric(
                                       vertical: 0, horizontal: 20),
                                   border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                      borderSide: BorderSide.none),
+                                      borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                                   filled: true,
                                   fillColor: Colors.grey[100],
                                 ),
@@ -266,6 +321,11 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 12),
 
+                              if (_provinceStats.isNotEmpty || _isProvinceLoading || _provinceError != null) ...[
+                                _buildProvinceSection(),
+                                const SizedBox(height: 24),
+                              ],
+
                               GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -274,7 +334,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                                   crossAxisCount: 2,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
-                                  childAspectRatio: 0.75,
+                                  childAspectRatio: 0.55, // Smaller ratio = taller cards
                                 ),
                                 itemCount: _filteredPlaces.length,
                                 itemBuilder: (context, index) {
@@ -296,12 +356,9 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
     );
   }
 
-  // WIDGET: Featured Card
+  // FIXED: Featured Card - removed nested duplicate Card
   Widget _buildFeaturedCard(Place place) {
-    String? imageUrl;
-    if (place.image != null && place.image!.isNotEmpty) {
-      imageUrl = "$baseUrl${place.image}";
-    }
+    final imageUrl = _resolveImageUrl(place.image);
 
     return GestureDetector(
       onTap: () {
@@ -311,53 +368,102 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
         );
       },
       child: Container(
-        width: 280,
+        width: 260,
         margin: const EdgeInsets.only(right: 12),
         child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 4,
+          elevation: 6,
           shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           clipBehavior: Clip.antiAlias,
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned.fill(
-                child: imageUrl != null
-                    ? Image.network(imageUrl, fit: BoxFit.cover)
-                    : Container(color: Colors.grey, child: const Icon(Icons.place)),
-              ),
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.9)],
-                    ),
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                          )
+                        : Container(color: Colors.grey[200], child: const Icon(Icons.place, size: 48)),
                   ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: _buildBadge(label: place.genre ?? "Venue", icon: Icons.directions_bike),
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: _buildBadge(label: "Featured", color: Colors.amber[700], icon: Icons.star),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(place.name,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(place.city ?? "Unknown",
-                          style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                      Text(
+                        place.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
                       const SizedBox(height: 6),
-                      Text("Rp ${place.price}",
-                          style: const TextStyle(color: Colors.yellowAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 14, color: Colors.blueGrey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              place.city ?? "Unknown",
+                              style: const TextStyle(color: Colors.blueGrey, fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "Rp ${place.price}",
+                          style: TextStyle(
+                            color: Colors.green[800],
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            (place.averageRating ?? 0).toStringAsFixed(1),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                          Text(
+                            " (${place.reviewCount ?? 0})",
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-              ),
-              const Positioned(
-                top: 12, right: 12,
-                child: Chip(
-                  label: Text("🏆 Featured", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  backgroundColor: Colors.white,
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ],
@@ -394,12 +500,9 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
     );
   }
 
-  // WIDGET: Kartu Grid Biasa
+  // FIXED: Place Card - constrained content to prevent overflow
   Widget _buildPlaceCard(Place place) {
-    String? imageUrl;
-    if (place.image != null && place.image!.isNotEmpty) {
-      imageUrl = "$baseUrl${place.image}";
-    }
+    final imageUrl = _resolveImageUrl(place.image);
 
     return GestureDetector(
       onTap: () {
@@ -409,36 +512,99 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
         );
       },
       child: Card(
-        elevation: 2,
-        shadowColor: Colors.black12,
+        elevation: 4,
+        shadowColor: Colors.black26,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 3,
-              child: imageUrl != null
-                  ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey)))
-                  : Container(color: Colors.blue[50], child: const Icon(Icons.place, color: Colors.blue)),
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        )
+                      : Container(color: Colors.blue[50], child: const Icon(Icons.place, color: Colors.blue)),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  right: 8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: _buildBadge(label: place.genre ?? "Venue", icon: Icons.flag),
+                      ),
+                      if (place.isFeatured == true)
+                        _buildBadge(label: "⭐", color: Colors.amber[700]),
+                    ],
+                  ),
+                ),
+              ],
             ),
             Expanded(
-              flex: 2,
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(place.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Row(children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(place.city ?? "-", style: const TextStyle(fontSize: 12, color: Colors.grey), overflow: TextOverflow.ellipsis)),
-                    ]),
-                    Text("Rp ${place.price}", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green[700])),
+                    Text(
+                      place.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 12, color: Colors.blueGrey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            place.city ?? "-",
+                            style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        "Rp ${place.price}",
+                        style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          (place.averageRating ?? 0).toStringAsFixed(1),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                        ),
+                        Text(
+                          " (${place.reviewCount ?? 0})",
+                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -446,6 +612,110 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProvinceSection() {
+    if (_isProvinceLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_provinceError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Explore by Province", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(
+              "Gagal memuat statistik provinsi",
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_provinceStats.isEmpty) {
+      return const SizedBox.shrink(); // Hide if empty
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Explore by Province", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _provinceStats.length,
+            itemBuilder: (context, index) {
+              final stat = _provinceStats[index];
+              final imageUrl = _resolveImageUrl(stat.image);
+              return Container(
+                width: 160,
+                margin: EdgeInsets.only(right: index == _provinceStats.length - 1 ? 0 : 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: imageUrl != null
+                            ? Image.network(imageUrl, fit: BoxFit.cover)
+                            : Container(color: Colors.blueGrey[300]),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.6)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              stat.province,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "${stat.venueCount} venues",
+                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
