@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http; // Butuh ini untuk Multipart Request
-import 'package:flutter/foundation.dart'; // kIsWeb
+import 'package:triathlon_mobile/constants.dart';
 
 class PlaceFormScreen extends StatefulWidget {
   const PlaceFormScreen({super.key});
@@ -16,88 +13,80 @@ class PlaceFormScreen extends StatefulWidget {
 
 class _PlaceFormScreenState extends State<PlaceFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
   
-  // Controllers
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _cityController = TextEditingController();
   final _provinceController = TextEditingController();
+  final _imageUrlController = TextEditingController();
   
   String? _selectedGenre;
   final List<String> _genres = ['Swimming Pool', 'Running Track', 'Bicycle Tracking'];
 
-  File? _imageFile; // Untuk menyimpan gambar yang dipilih
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _descriptionController.dispose();
+    _cityController.dispose();
+    _provinceController.dispose();
+    _imageUrlController.dispose();
+    super.dispose();
   }
 
   Future<void> _submitForm(CookieRequest request) async {
     if (!_formKey.currentState!.validate()) return;
-
-    // URL API Django
-    String baseUrl = kIsWeb ? "http://127.0.0.1:8000" : "http://10.0.2.2:8000";
-    var uri = Uri.parse("$baseUrl/place/api/add-place/");
-
-    // Siapkan Multipart Request (Bukan JSON biasa)
-    var multipartRequest = http.MultipartRequest("POST", uri);
-
-    // Tambahkan Data Teks
-    multipartRequest.fields['name'] = _nameController.text;
-    multipartRequest.fields['price'] = _priceController.text;
-    multipartRequest.fields['description'] = _descriptionController.text;
-    multipartRequest.fields['city'] = _cityController.text;
-    multipartRequest.fields['province'] = _provinceController.text;
-    if (_selectedGenre != null) {
-      multipartRequest.fields['genre'] = _selectedGenre!;
-    }
-
-    // Tambahkan Gambar (Jika ada)
-    if (_imageFile != null) {
-      var stream = http.ByteStream(_imageFile!.openRead());
-      var length = await _imageFile!.length();
-      var multipartFile = http.MultipartFile(
-        'image', stream, length,
-        filename: _imageFile!.path.split("/").last
+    if (_selectedGenre == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Pilih genre terlebih dahulu")),
       );
-      multipartRequest.files.add(multipartFile);
+      return;
     }
 
-    // PENTING: Sisipkan Headers dari CookieRequest agar dianggap Login
-    // Kita ambil headers dari request library pbp_django_auth
-    Map<String, String> headers = request.headers;
-    multipartRequest.headers.addAll(headers);
+    setState(() => _isLoading = true);
 
-    // Kirim Request
+    final url = "$baseUrl/place/api/add-place/";
+
+    final payload = {
+      'name': _nameController.text.trim(),
+      'price': _priceController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'city': _cityController.text.trim(),
+      'province': _provinceController.text.trim(),
+      'genre': _selectedGenre,
+      'image_url': _imageUrlController.text.trim().isEmpty
+          ? null
+          : _imageUrlController.text.trim(),
+    };
+
     try {
-      var streamedResponse = await multipartRequest.send();
-      var response = await http.Response.fromStream(streamedResponse);
+      final response = await request.postJson(
+        url,
+        jsonEncode(payload),
+      );
 
-      if (response.statusCode == 201) {
-        if (context.mounted) {
+      setState(() => _isLoading = false);
+
+      if (context.mounted) {
+        if (response['success'] == true || response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Tempat berhasil ditambahkan!")),
           );
-          Navigator.pop(context, true); // Kembali ke list dan refresh
-        }
-      } else {
-        if (context.mounted) {
+          Navigator.pop(context, true);
+        } else {
+          final errorMsg = response['message'] ?? response['error'] ?? 'Gagal menambahkan tempat';
           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text("Gagal: ${response.body}")),
+            SnackBar(content: Text("Gagal: $errorMsg")),
           );
         }
       }
     } catch (e) {
+      setState(() => _isLoading = false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error koneksi: $e")),
+          SnackBar(content: Text("Error: $e")),
         );
       }
     }
@@ -118,52 +107,58 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // IMAGE PICKER
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: _imageFile != null
-                    ? Image.file(_imageFile!, fit: BoxFit.cover)
-                    : const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
-                          Text("Tap untuk upload gambar"),
-                        ],
-                      ),
+            TextFormField(
+              controller: _imageUrlController,
+              decoration: const InputDecoration(
+                labelText: "URL Gambar (opsional)",
+                hintText: "https://...",
+                border: OutlineInputBorder(),
               ),
+              keyboardType: TextInputType.url,
+              onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 20),
-
-            // FORM FIELDS
+            const SizedBox(height: 12),
+            if (_imageUrlController.text.trim().isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.network(
+                    _imageUrlController.text.trim(),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: const Center(child: Text("Gagal memuat gambar")),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            if (_imageUrlController.text.trim().isNotEmpty)
+              const SizedBox(height: 20),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: "Nama Tempat", border: OutlineInputBorder()),
-              validator: (value) => value!.isEmpty ? "Nama tidak boleh kosong" : null,
+              decoration: const InputDecoration(labelText: "Nama Tempat *", border: OutlineInputBorder()),
+              validator: (value) => value == null || value.trim().isEmpty ? "Nama tidak boleh kosong" : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _priceController,
-              decoration: const InputDecoration(labelText: "Harga (Rp)", border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: "Harga (Rp) *", border: OutlineInputBorder()),
               keyboardType: TextInputType.number,
-              validator: (value) => value!.isEmpty ? "Harga tidak boleh kosong" : null,
+              validator: (value) => value == null || value.trim().isEmpty ? "Harga tidak boleh kosong" : null,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedGenre,
-              hint: const Text("Pilih Genre"),
+              hint: const Text("Pilih Genre *"),
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: _genres.map((String value) {
                 return DropdownMenuItem<String>(value: value, child: Text(value));
               }).toList(),
               onChanged: (val) => setState(() => _selectedGenre = val),
+              validator: (value) => value == null ? "Pilih genre" : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -182,15 +177,20 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 24),
-            
             ElevatedButton(
-              onPressed: () => _submitForm(request),
+              onPressed: _isLoading ? null : () => _submitForm(request),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[900],
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text("Simpan Tempat", style: TextStyle(fontSize: 16)),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text("Simpan Tempat", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
