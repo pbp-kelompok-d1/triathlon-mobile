@@ -311,7 +311,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
-  // --- STATS SECTION ---
   Widget _buildStatsSection() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -429,7 +428,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
-  // --- FACILITIES SECTION (NAVIGASI DITAMBAHKAN) ---
+  // --- FACILITIES SECTION (NAVIGASI & GAMBAR) ---
   Widget _buildFacilitiesSection() {
     final facilities = _dashboardData?.facilities ?? [];
     
@@ -455,7 +454,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
         ),
         const SizedBox(height: 12),
         if (facilities.isEmpty)
-          // EMPTY STATE: BUTTON NAVIGATE KE FORM ADD FACILITY
           _buildEmptyState(
             icon: Icons.location_city_outlined,
             title: 'No Facilities Found',
@@ -476,15 +474,11 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
-  // CARD FACILITY: ONTAP NAVIGATE KE DETAIL
+  // CARD FACILITY: GAMBAR & NAVIGASI
   Widget _buildFacilityCard(Place facility) {
-    // Ambil imageUrl (sesuaikan dengan nama field di model Place Anda)
-    // Di model Place.fromJson, biasanya field 'image_url' atau 'imageUrl'
-    // Pastikan di model Place Anda field-nya sesuai.
-    // Jika di DashboardData modelnya `Place`, cek apakah dia punya `imageUrl`.
-    // Kita asumsikan namanya `imageUrl` sesuai diskusi sebelumnya.
+    // Pastikan key image sesuai dengan model Flutter
     final imageUrl = facility.image; 
-
+    
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -576,7 +570,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                       ),
                       Text(
-                        _formatCurrency(double.parse(facility.price)),
+                        _formatCurrency(double.tryParse(facility.price) ?? 0),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
