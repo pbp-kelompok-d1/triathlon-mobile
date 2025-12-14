@@ -238,23 +238,24 @@ class _ProductListPageState extends State<ProductListPage>
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => const ProductFormPage()),
-              );
-              if (result == true) _refresh();
-            },
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add Product', style: TextStyle(fontSize: 13)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          if (role == 'SELLER')
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProductFormPage()),
+                );
+                if (result == true) _refresh();
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add Product', style: TextStyle(fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[700],
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
             ),
-          ),
           const SizedBox(width: 16),
         ]
             : [
@@ -281,17 +282,18 @@ class _ProductListPageState extends State<ProductListPage>
             icon: const Icon(Icons.shopping_cart),
             color: Colors.green,
           ),
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => const ProductFormPage()),
-              );
-              if (result == true) _refresh();
-            },
-            icon: const Icon(Icons.add),
-            color: Colors.white,
-          ),
+          if (role == 'SELLER')
+            IconButton(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProductFormPage()),
+                );
+                if (result == true) _refresh();
+              },
+              icon: const Icon(Icons.add),
+              color: Colors.white,
+            ),
         ],
       ),
       drawer: const LeftDrawer(),
@@ -1037,6 +1039,7 @@ class _ProductCardState extends State<_ProductCard>
     final imageUrl = _imageUrl;
 
     final isAdmin = role == 'ADMIN';
+    final isSeller = role == 'SELLER';
 
     final currentUsername = request.jsonData['username'] as String?;
     final isOwnProduct = currentUsername != null &&
