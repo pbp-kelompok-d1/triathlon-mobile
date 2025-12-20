@@ -1,139 +1,140 @@
 import 'package:flutter/material.dart';
-import 'package:pbp_django_auth/pbp_django_auth.dart';
-import 'package:provider/provider.dart';
-
-import 'package:triathlon_mobile/constants.dart';
-import 'package:triathlon_mobile/screens/login.dart';
 import 'package:triathlon_mobile/screens/menu.dart';
-import '../forum/screens/forum_list.dart';
-import '../ticket/screens/ticket_list_page.dart';
 import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
-import 'package:triathlon_mobile/widgets/left_drawer.dart';
-import 'package:triathlon_mobile/user_profile/widgets/profile_drawer.dart';
-import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
-import 'package:triathlon_mobile/place/models/place.dart';
-import 'package:triathlon_mobile/place/services/place_service.dart';
-import 'package:triathlon_mobile/place/screens/place_detail_screen.dart';
 import 'package:triathlon_mobile/forum/screens/forum_list.dart';
 import 'package:triathlon_mobile/ticket/screens/ticket_list_page.dart';
-import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
-import 'package:triathlon_mobile/activity/screens/activity_form.dart';
-import 'package:triathlon_mobile/constants.dart';
- // ← Import admin dashboard
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
+  // Warna utama yang konsisten dengan Right Drawer
+  static const primaryColor = Color(0xFF433BFF);
+  static const secondaryColor = Color(0xFF2D27A8);
+
+  // Helper untuk animasi masuk (Staggered Entrance)
+  Widget _animateEntrance(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 450 + (index * 80)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(-30 * (1 - value), 0), // Muncul dari kiri (berlawanan dengan Right Drawer)
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-  // Reuse the same CookieRequest that login.dart seeded so logout works consistently.
-
     return Drawer(
-      child: ListView(
+      backgroundColor: Colors.white,
+      child: Column(
         children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Color(0xFF1D4ED8),
+          // 1. Header dengan Logo dan Slogan
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [primaryColor, secondaryColor],
+              ),
             ),
-            child: Column(
+            child: _animateEntrance(0, Column(
               children: [
+                Image(image:  const AssetImage('assets/images/logo_triathlon.png'),
+                  width: 100,
+                  height: 100,
+                ),
+                SizedBox(height: 10),
                 Text(
                   'Triathlon',
-                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    letterSpacing: 1.1,
                   ),
                 ),
-                Padding(padding: EdgeInsets.all(8)),
+                SizedBox(height: 8),
                 Text(
-                  "Curate, list, and track your endurance gear in one place.",
+                  "We Achieve, We Persevere, We Triumph",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                    fontWeight: FontWeight.normal,
+                    fontSize: 13,
+                    color: Colors.white70,
                   ),
                 ),
               ],
+            )),
+          ),
+
+          // 2. List Menu Items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              children: [
+                _animateEntrance(1, _buildDrawerItem(
+                  icon: Icons.home_outlined,
+                  title: 'Home',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => MyHomePage())),
+                )),
+                _animateEntrance(2, _buildDrawerItem(
+                  icon: Icons.nordic_walking_sharp,
+                  title: 'Activity',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => const ActivityMenu())),
+                )),
+                _animateEntrance(3, _buildDrawerItem(
+                  icon: Icons.shopify_sharp,
+                  title: 'Shop',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => const ShopPage())),
+                )),
+                _animateEntrance(4, _buildDrawerItem(
+                  icon: Icons.forum_outlined,
+                  title: 'Forum',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => const ForumListPage())),
+                )),
+                _animateEntrance(5, _buildDrawerItem(
+                  icon: Icons.confirmation_number_outlined,
+                  title: 'My Tickets',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => const TicketListPage())),
+                )),
+                _animateEntrance(6, _buildDrawerItem(
+                  icon: Icons.place_outlined,
+                  title: 'Places',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (ctx) => const PlaceListScreen())),
+                )),
+              ],
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.home_outlined),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyHomePage(),
-                  ));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.nordic_walking_sharp),
-            title: const Text('Activity'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ActivityMenu(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.shopify_sharp),
-            title: const Text('Shop'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ShopPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.forum),
-            title: const Text('Forum'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ForumListPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.confirmation_number),
-            title: const Text('My Tickets'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TicketListPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.place),
-            title: const Text('Places'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PlaceListScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: primaryColor),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+      ),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      hoverColor: primaryColor.withOpacity(0.1),
     );
   }
 }

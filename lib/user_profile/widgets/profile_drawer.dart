@@ -51,12 +51,30 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
     }
   }
 
+  Widget _animateEntrance(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 450 + (index * 80)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(30 * (1 - value), 0), // Muncul dari kanan
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   Widget _buildDashboardButton() {
     final role = UserProfileData.role.toUpperCase();
     
     if (role.isEmpty || role == 'GUEST') return const SizedBox.shrink();
 
-    return Container(
+    return _animateEntrance(1, Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -121,6 +139,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
           ),
         ),
       ),
+    )
     );
   }
 
@@ -156,7 +175,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                 ? Column(
                     children: [
                       // Profile Picture
-                      Container(
+                      _animateEntrance(0, Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           boxShadow: [
@@ -189,10 +208,11 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                               : null,
                         ),
                       ),
+                      ),
                       const SizedBox(height: 16),
                       
                       // Full Name
-                      Text(
+                      _animateEntrance(0, Text(
                         fullName.isNotEmpty ? fullName : username,
                         style: const TextStyle(
                           color: Colors.white,
@@ -201,11 +221,12 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                           letterSpacing: 0.5,
                         ),
                         textAlign: TextAlign.center,
+                      )
                       ),
                       
                       // Username
                       if (fullName.isNotEmpty)
-                        Padding(
+                        _animateEntrance(0, Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             '@$username',
@@ -216,22 +237,24 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                             ),
                           ),
                         ),
+                        ),
                       
                       const SizedBox(height: 8),
                       
                       // Email
-                      Text(
+                      _animateEntrance(0, Text(
                         email,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.75),
                           fontSize: 13,
                         ),
                       ),
+                      ),
                       
                       const SizedBox(height: 12),
                       
                       // Role Badge
-                      Container(
+                      _animateEntrance(0, Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 6,
@@ -254,11 +277,12 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                           ),
                         ),
                       ),
+                      ),
                       
                       // Bio
                       if (bio.isNotEmpty) ...[
                         const SizedBox(height: 14),
-                        Container(
+                        _animateEntrance(0, Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -277,6 +301,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        )
                       ],
                     ],
                   )
@@ -333,7 +358,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
             _buildDashboardButton(),
             
             // Edit Profile Button
-            Container(
+            _animateEntrance(1, Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -377,6 +402,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
                   ),
                 ),
               ),
+            ),
             ),
             
             const Padding(
@@ -572,7 +598,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
+    return _animateEntrance(1, Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
         color: Colors.transparent,
@@ -597,6 +623,7 @@ class _CustomRightDrawerState extends State<CustomRightDrawer> {
           ),
         ),
       ),
+    )
     );
   }
 }

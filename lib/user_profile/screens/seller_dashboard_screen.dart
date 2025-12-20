@@ -212,6 +212,23 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
+  Widget _animateTask(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 100)), // Delay bertahap
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)), // Efek slide up
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   Widget _buildFilterSection() {
     return Container(
       margin: const EdgeInsets.all(16),
@@ -375,7 +392,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: posts.length,
             separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildPostCard(posts[idx]),
+            itemBuilder: (ctx, idx) => _animateTask(idx, _buildPostCard(posts[idx])),
           ),
         const SizedBox(height: 24),
       ],
@@ -493,7 +510,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 ),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
-                  return _buildProductCard(products[index]);
+                  return _animateTask(index, _buildProductCard(products[index]));
                 },
               );
             },
@@ -517,28 +534,31 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: product.thumbnail.isNotEmpty
-                    ? Image.network(
-                        product.thumbnail,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(Icons.broken_image, color: Colors.grey),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          color: primaryGreen.withOpacity(0.1),
+                child: Hero(
+                  tag: 'product-image-${product.id}', 
+                  child: product.thumbnail.isNotEmpty
+                      ? Image.network(
+                          product.thumbnail,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(Icons.broken_image, color: Colors.grey),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: primaryGreen.withOpacity(0.1),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.shopping_bag, size: 48, color: primaryGreen),
+                          ),
                         ),
-                        child: const Center(
-                          child: Icon(Icons.shopping_bag, size: 48, color: primaryGreen),
-                        ),
-                      ),
+                ),
               ),
             ),
             Padding(
