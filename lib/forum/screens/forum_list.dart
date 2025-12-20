@@ -39,6 +39,12 @@ import 'forum_edit.dart';
 import 'forum_form.dart';
 import 'forum_user_profile.dart';  // Import for user profile navigation
 
+// =============================================================================
+// BONUS FEATURE IMPORTS: Advanced Animations & Shimmer Loading
+// =============================================================================
+import '../widgets/shimmer_loading.dart';       // Skeleton loading with shimmer effect
+import '../widgets/page_transitions.dart';      // Custom page transitions
+
 /// Main forum listing page showing all forum posts
 class ForumListPage extends StatefulWidget {
   const ForumListPage({super.key});
@@ -47,10 +53,22 @@ class ForumListPage extends StatefulWidget {
   State<ForumListPage> createState() => _ForumListPageState();
 }
 
-class _ForumListPageState extends State<ForumListPage> {
+class _ForumListPageState extends State<ForumListPage>
+    with TickerProviderStateMixin {
   // ===========================================================================
   // State Variables
   // ===========================================================================
+  
+  // ---------------------------------------------------------------------------
+  // BONUS: Animation Controllers for Advanced Animations
+  // ---------------------------------------------------------------------------
+  // Controller for FAB scale animation on scroll
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabScaleAnimation;
+  // Track scroll position for FAB visibility
+  bool _isFabVisible = true;
+  // Scroll controller for detecting scroll direction
+  final ScrollController _scrollController = ScrollController();
   
   // ---------------------------------------------------------------------------
   // Search State
@@ -122,13 +140,54 @@ class _ForumListPageState extends State<ForumListPage> {
     _refreshPosts();
     // Listen to search input changes for real-time filtering
     _searchController.addListener(_onSearchChanged);
+    
+    // =========================================================================
+    // BONUS: Initialize FAB Animation Controller
+    // =========================================================================
+    // This creates a smooth scale animation for the FAB when scrolling
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _fabScaleAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _fabAnimationController, curve: Curves.easeInOut),
+    );
+    
+    // Listen to scroll events to hide/show FAB
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    // BONUS: Dispose animation controllers
+    _fabAnimationController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+  
+  // ===========================================================================
+  // BONUS: Scroll Handler for FAB Animation
+  // ===========================================================================
+  /// Handles scroll events to show/hide FAB with animation
+  /// FAB hides when scrolling down and shows when scrolling up
+  void _onScroll() {
+    // Check if user is scrolling down
+    if (_scrollController.position.userScrollDirection.name == 'reverse') {
+      // Scrolling down - hide FAB
+      if (_isFabVisible) {
+        _isFabVisible = false;
+        _fabAnimationController.forward();
+      }
+    } else {
+      // Scrolling up - show FAB
+      if (!_isFabVisible) {
+        _isFabVisible = true;
+        _fabAnimationController.reverse();
+      }
+    }
   }
 
   /// Called when search text changes - updates filter state
@@ -293,13 +352,16 @@ class _ForumListPageState extends State<ForumListPage> {
   // ===========================================================================
   // Navigation & Actions
   // ===========================================================================
+  // BONUS: Using custom page transitions for smoother navigation animations
 
   /// Navigate to post detail and refresh on return if needed
+  /// BONUS: Uses HeroPageRoute for smooth Hero animation transition
   Future<void> _navigateToDetail(ForumPost post) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ForumDetailPage(postId: post.id),
+      // BONUS: Custom fade-scale transition for detail page
+      HeroPageRoute(
+        page: ForumDetailPage(postId: post.id),
       ),
     );
     
@@ -310,10 +372,12 @@ class _ForumListPageState extends State<ForumListPage> {
   }
 
   /// Navigate to create post and refresh on return if needed
+  /// BONUS: Uses SlideUpPageRoute for modal-like transition
   Future<void> _navigateToCreate() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ForumFormPage()),
+      // BONUS: Slide up transition for form pages
+      SlideUpPageRoute(page: const ForumFormPage()),
     );
     
     // Refresh list if post was created
@@ -323,11 +387,13 @@ class _ForumListPageState extends State<ForumListPage> {
   }
 
   /// Navigate to edit post and refresh on return if needed
+  /// BONUS: Uses SlideUpPageRoute for modal-like transition
   Future<void> _navigateToEdit(ForumPost post) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ForumEditPage(post: post),
+      // BONUS: Slide up transition for edit form
+      SlideUpPageRoute(
+        page: ForumEditPage(post: post),
       ),
     );
     
@@ -478,12 +544,24 @@ class _ForumListPageState extends State<ForumListPage> {
       
       // -----------------------------------------------------------------------
       // FAB - Create Post
+      // BONUS: Animated FAB that hides on scroll down and shows on scroll up
       // -----------------------------------------------------------------------
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToCreate,
-        backgroundColor: const Color(0xFF1D4ED8),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Post', style: TextStyle(color: Colors.white)),
+      floatingActionButton: ScaleTransition(
+        scale: Tween<double>(begin: 1.0, end: 0.0).animate(
+          CurvedAnimation(
+            parent: _fabAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: _navigateToCreate,
+          backgroundColor: const Color(0xFF1D4ED8),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('New Post', style: TextStyle(color: Colors.white)),
+          // BONUS: Add elevation animation for depth effect
+          elevation: 6,
+          highlightElevation: 12,
+        ),
       ),
       
       // -----------------------------------------------------------------------
@@ -629,12 +707,19 @@ class _ForumListPageState extends State<ForumListPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => _refreshPosts(),
+              // BONUS: Color and styling for refresh indicator
+              color: const Color(0xFF1D4ED8),
+              backgroundColor: Colors.white,
+              strokeWidth: 3,
               child: FutureBuilder<List<ForumPost>>(
                 future: _postsFuture,
                 builder: (context, snapshot) {
-                  // Loading state
+                  // =========================================================
+                  // BONUS: Shimmer Loading State
+                  // =========================================================
+                  // Replace boring spinner with beautiful skeleton loading
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const ForumListShimmer(itemCount: 5);
                   }
 
                   // Error state
@@ -733,17 +818,23 @@ class _ForumListPageState extends State<ForumListPage> {
                           ),
                         ),
                       ),
-                      // Posts list
+                      // =======================================================
+                      // BONUS: Posts List with Staggered Animations
+                      // =======================================================
+                      // Using scroll controller for FAB hide/show behavior
                       Expanded(
                         child: ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.all(12),
                           itemCount: filteredPosts.length,
                           itemBuilder: (context, index) {
                             final post = filteredPosts[index];
-                            return _buildPostCard(
+                            // BONUS: Wrap each card in staggered animation
+                            return _buildAnimatedPostCard(
                               post, 
                               currentUsername, 
                               currentUserRole,
+                              index,
                             );
                           },
                         ),
@@ -756,6 +847,107 @@ class _ForumListPageState extends State<ForumListPage> {
           ),
         ],
       ),
+    );
+  }
+  
+  // ===========================================================================
+  // BONUS: Animated Post Card Builder with Swipe-to-Delete
+  // ===========================================================================
+  /// Builds a post card with staggered entrance animation and swipe-to-delete
+  /// Cards animate in sequence based on their index in the list
+  /// Users can swipe left to delete their own posts (or any post if admin)
+  Widget _buildAnimatedPostCard(
+    ForumPost post,
+    String? currentUsername,
+    String? currentUserRole,
+    int index,
+  ) {
+    // Check if user can delete this post
+    final canDelete = ForumService.canDelete(currentUsername, post.author, currentUserRole);
+    
+    // Build the base card
+    Widget postCard = _buildPostCard(post, currentUsername, currentUserRole);
+    
+    // Wrap with Dismissible for swipe-to-delete (if user has permission)
+    if (canDelete) {
+      postCard = Dismissible(
+        key: Key('post_${post.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 24),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.red[400],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.delete, color: Colors.white, size: 28),
+              const SizedBox(height: 4),
+              Text(
+                'Delete',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        confirmDismiss: (_) async {
+          // Show confirmation dialog before deleting
+          return await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Delete Post'),
+              content: Text('Are you sure you want to delete "${post.title}"?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Delete'),
+                ),
+              ],
+            ),
+          ) ?? false;
+        },
+        onDismissed: (_) async {
+          final request = context.read<CookieRequest>();
+          await ForumService.deletePost(request, post.id);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Post "${post.title}" deleted')),
+            );
+            // Trigger refresh
+            setState(() {});
+          }
+        },
+        child: postCard,
+      );
+    }
+    
+    // Wrap with staggered entrance animation
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: postCard,
     );
   }
 
@@ -1124,13 +1316,19 @@ class _ForumListPageState extends State<ForumListPage> {
                         ],
                       ),
                     ),
-                  // Title
+                  // Title with Hero animation for smooth transition to detail
                   Expanded(
-                    child: Text(
-                      post.title,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                    child: Hero(
+                      tag: 'post_title_${post.id}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(
+                          post.title,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
