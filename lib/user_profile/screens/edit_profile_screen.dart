@@ -49,6 +49,64 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  InputDecoration _buildInputDecoration({required String label, required IconData icon, String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: primaryColor.withOpacity(0.7)),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8, top: 16),
+          child: Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade600,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
   Future<void> _fetchCurrentProfile() async {
     setState(() => _isLoading = true);
     
@@ -675,233 +733,157 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: primaryColor,
         elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                 children: [
-                  // Profile Picture
+                  // 1. Profile Picture Header (Tetap menggunakan desain bulat)
+                  const SizedBox(height: 20),
                   Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withOpacity(0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: primaryColor.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8)),
+                            ],
                           ),
-                        ],
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: primaryColor.withOpacity(0.1),
+                            child: Text(
+                              _usernameController.text.isNotEmpty ? _usernameController.text[0].toUpperCase() : 'U',
+                              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: primaryColor),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(child: Text(_usernameController.text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                  
+                  // 2. Section Account
+                  _buildSection('Account Information', [
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: _buildInputDecoration(label: 'Username', icon: Icons.person_outline_rounded),
+                      validator: (value) => (value == null || value.isEmpty) ? 'Username required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: _buildInputDecoration(label: 'Email', icon: Icons.email_outlined),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) => (value == null || !value.contains('@')) ? 'Valid email required' : null,
+                    ),
+                  ]),
+
+                  // 3. Section Personal
+                  _buildSection('Personal Details', [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _firstNameController,
+                            decoration: _buildInputDecoration(label: 'First Name', icon: Icons.badge_outlined),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _lastNameController,
+                            decoration: _buildInputDecoration(label: 'Last Name', icon: Icons.badge_outlined),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: _buildInputDecoration(label: 'Phone Number', icon: Icons.phone_android_outlined),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _bioController,
+                      maxLines: 3,
+                      decoration: _buildInputDecoration(label: 'Bio', icon: Icons.notes_rounded, hint: 'Tell something about yourself...'),
+                    ),
+                  ]),
+
+                  const SizedBox(height: 32),
+
+                  // 4. Action Buttons
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundColor: primaryColor.withOpacity(0.1),
-                        child: Text(
-                          _usernameController.text.isNotEmpty
-                              ? _usernameController.text[0].toUpperCase()
-                              : 'U',
-                          style: const TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
+                      child: _isSaving
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('SAVE CHANGES', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1)),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _changePassword,
+                          icon: const Icon(Icons.lock_outline_rounded),
+                          label: const Text('Change Password'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: primaryColor,
+                            side: const BorderSide(color: primaryColor),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Username
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: const Icon(Icons.person_outline_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Username cannot be empty';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email cannot be empty';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // First Name
-                  TextFormField(
-                    controller: _firstNameController,
-                    decoration: InputDecoration(
-                      labelText: 'First Name',
-                      prefixIcon: const Icon(Icons.badge_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Last Name
-                  TextFormField(
-                    controller: _lastNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Last Name',
-                      prefixIcon: const Icon(Icons.badge_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Phone Number
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: InputDecoration(
-                      labelText: 'Phone Number',
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Bio
-                  TextFormField(
-                    controller: _bioController,
-                    decoration: InputDecoration(
-                      labelText: 'Bio',
-                      prefixIcon: const Icon(Icons.notes_rounded),
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: primaryColor, width: 2),
-                      ),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Save Button
-                  ElevatedButton(
-                    onPressed: _isSaving ? null : _saveProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white
-                            ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _deleteAccount,
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: const Text('Delete Account'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Change Password Button
-                  OutlinedButton.icon(
-                    onPressed: _changePassword,
-                    icon: const Icon(Icons.lock_outline_rounded),
-                    label: const Text('Change Password'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: primaryColor,
-                      side: const BorderSide(color: primaryColor, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Delete Account Button
-                  OutlinedButton.icon(
-                    onPressed: _deleteAccount,
-                    icon: const Icon(Icons.delete_outline_rounded),
-                    label: const Text('Delete Account'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),
