@@ -1,211 +1,230 @@
 import 'package:flutter/material.dart';
 import 'package:triathlon_mobile/activity/models/activity_model.dart';
-import 'package:triathlon_mobile/activity/screens/activity_form.dart';
-import 'package:pbp_django_auth/pbp_django_auth.dart';
-import 'package:provider/provider.dart';
-import 'dart:convert';
 
 class ActivityCard extends StatelessWidget {
   final Activity activity;
-  final VoidCallback onRefresh;
+
+  /// Callbacks mirror your JS buttons.
+  /// You can open modals, navigate to detail/edit pages, or show dialogs.
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const ActivityCard({
     super.key,
     required this.activity,
-    required this.onRefresh,
+    required this.onView,
+    required this.onEdit,
+    required this.onDelete,
   });
 
-  Future<void> _deleteActivity(BuildContext context, CookieRequest request) async {
-    final response = await request.postJson(
-      "http://127.0.0.1:8000/activities/delete/${activity.id}",
-      jsonEncode({}),
-    );
+  String _displayHM(String duration) {
+    // Expects "HH:MM:SS" (like your API returns). Falls back safely.
+    final parts = duration.split(':');
+    if (parts.length < 2) return duration;
 
-    if (context.mounted) {
-      if (response['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Activity deleted successfully!")),
-        );
-        onRefresh();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message'] ?? "Failed to delete")),
-        );
-      }
-    }
+    final h = int.tryParse(parts[0]) ?? 0;
+    final m = int.tryParse(parts[1]) ?? 0;
+
+    if (h <= 0) return "${m}m";
+    if (m <= 0) return "${h}h";
+    return "${h}h ${m}m";
   }
 
   @override
   Widget build(BuildContext context) {
-    final request = context.watch<CookieRequest>();
+    final hm = _displayHM(activity.duration);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final date = (activity.doneAtDisplay.trim().isNotEmpty)
+        ? activity.doneAtDisplay
+        : (activity.doneAtIso.trim().isNotEmpty ? activity.doneAtIso : "");
+
+    final sport = activity.sportLabel.trim().isNotEmpty
+        ? activity.sportLabel
+        : activity.sportCategory;
+
+    final kcal = activity.caloriesBurned.round();
+
+    final hasOwner = activity.creatorUsername.trim().isNotEmpty;
+    final hasPlace = (activity.placeName != null && activity.placeName!.trim().isNotEmpty);
+    final hasNotesShort = activity.notesShort.trim().isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Owner/Place and Kcal
+            // Top row: title/metadata + kcal badge
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "@${activity.creatorUsername}",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      if (activity.placeName != null)
+                      if (hasOwner)
+                        Text(
+                          "@${activity.creatorUsername}",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      if (hasPlace)
                         Text(
                           activity.placeName!,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       const SizedBox(height: 4),
                       Text(
                         activity.title,
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Text(
-                        "${activity.sportLabel} • ${activity.doneAtDisplay}",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        [sport, date].where((s) => s.trim().isNotEmpty).join(" • "),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: const Color(0xFFEFF6FF), // light blue-ish
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    "${activity.caloriesBurned.round()} kcal",
-                    style: TextStyle(
-                      color: Colors.blue[700],
+                    "$kcal kcal",
+                    style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1D4ED8), // blue text-ish
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Grid Stats
+
+            const SizedBox(height: 14),
+
+            // 3-column "grid" like your JS card
             Row(
               children: [
-                Expanded(child: _buildStatBox("Duration", _formatDuration(activity.duration))),
-                const SizedBox(width: 8),
-                Expanded(child: _buildStatBox("Distance", "${activity.distance} m")),
-                const SizedBox(width: 8),
-                Expanded(child: _buildStatBox("Sport", activity.sportLabel)),
+                Expanded(
+                  child: _StatBox(
+                    label: "Duration",
+                    value: hm,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _StatBox(
+                    label: "Distance",
+                    value: "${activity.distance} m",
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _StatBox(
+                    label: "Sport",
+                    value: sport,
+                  ),
+                ),
               ],
             ),
-            if (activity.notesShort.isNotEmpty) ...[
-              const SizedBox(height: 16),
+
+            if (hasNotesShort) ...[
+              const SizedBox(height: 14),
               Text(
                 activity.notesShort,
-                style: TextStyle(color: Colors.grey[800]),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
               ),
             ],
+
             const SizedBox(height: 16),
-            // Actions
+
+            // Buttons row: View, Edit (expanded), Delete
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // TODO: Implement View Modal if needed, or just show full notes in a dialog
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(activity.title),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text("Sport: ${activity.sportLabel}"),
-                                Text("Date: ${activity.doneAtDisplay}"),
-                                Text("Duration: ${_formatDuration(activity.duration)}"),
-                                Text("Distance: ${activity.distance} m"),
-                                Text("Calories: ${activity.caloriesBurned} kcal"),
-                                const SizedBox(height: 10),
-                                const Text("Notes:", style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text(activity.notesFull),
-                              ],
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("Close"),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    child: const Text("View"),
+                ElevatedButton(
+                  onPressed: onView,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade200,
+                    foregroundColor: Colors.black87,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    "View",
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
+                    onPressed: onEdit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
+                      backgroundColor: const Color(0xFF4F46E5), // indigo-ish
                       foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    onPressed: () async {
-                       await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ActivityFormPage(activity: activity),
-                        ),
-                      );
-                      onRefresh();
-                    },
-                    child: const Text("Edit"),
+                    child: const Text(
+                      "Edit",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: onDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626), // red-ish
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: () {
-                       showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text("Delete Activity"),
-                          content: Text("Are you sure you want to delete '${activity.title}'?"),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("Cancel"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _deleteActivity(context, request);
-                              },
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text("Delete"),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    child: const Text("Delete"),
+                  ),
+                  child: const Text(
+                    "Delete",
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -215,13 +234,24 @@ class ActivityCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatBox(String label, String value) {
+class _StatBox extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatBox({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,39 +259,22 @@ class ActivityCard extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w500,
-            ),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade800,
+            ),
           ),
         ],
       ),
     );
-  }
-
-  String _formatDuration(String duration) {
-    // Expecting "HH:MM:SS" or "D day, HH:MM:SS"
-    // Simple parser for "HH:MM:SS"
-    try {
-      final parts = duration.split(':');
-      if (parts.length == 3) {
-        final h = int.parse(parts[0]);
-        final m = int.parse(parts[1]);
-        return "${h}h ${m.toString().padLeft(2, '0')}m";
-      }
-    } catch (e) {
-      // Fallback
-    }
-    return duration;
   }
 }

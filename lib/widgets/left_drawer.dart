@@ -9,6 +9,18 @@ import '../forum/screens/forum_list.dart';
 import '../ticket/screens/ticket_list_page.dart';
 import 'package:triathlon_mobile/shop/screens/shop_main.dart';
 import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
+import 'package:triathlon_mobile/widgets/left_drawer.dart';
+import 'package:triathlon_mobile/user_profile/widgets/profile_drawer.dart';
+import 'package:triathlon_mobile/shop/screens/shop_main.dart';
+import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
+import 'package:triathlon_mobile/place/models/place.dart';
+import 'package:triathlon_mobile/place/services/place_service.dart';
+import 'package:triathlon_mobile/place/screens/place_detail_screen.dart';
+import 'package:triathlon_mobile/forum/screens/forum_list.dart';
+import 'package:triathlon_mobile/ticket/screens/ticket_list_page.dart';
+import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
+import 'package:triathlon_mobile/activity/screens/activity_form.dart';
+import 'package:triathlon_mobile/constants.dart';
  // ← Import admin dashboard
 
 class LeftDrawer extends StatelessWidget {
@@ -97,13 +109,25 @@ class LeftDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.confirmation_num),
+            leading: const Icon(Icons.confirmation_number),
             title: const Text('My Tickets'),
             onTap: () {
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const TicketListPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.place),
+            title: const Text('Places'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PlaceListScreen(),
                 ),
               );
             },
