@@ -21,6 +21,8 @@ class MyApp extends StatelessWidget {
       // Provide one CookieRequest globally for authentication + API state.
       create: (_) {
         CookieRequest request = CookieRequest();
+        // Enable credentials for web to send cookies (including CSRF token)
+        request.init();
         return request;
       },
       child: MaterialApp(
