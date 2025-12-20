@@ -55,17 +55,25 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
       'description': _descriptionController.text.trim(),
       'city': _cityController.text.trim(),
       'province': _provinceController.text.trim(),
-      'genre': _selectedGenre,
+      'genre': _selectedGenre!,
       'image_url': _imageUrlController.text.trim().isEmpty
-          ? null
+          ? ''
           : _imageUrlController.text.trim(),
     };
 
     try {
-      final response = await request.postJson(
+      // Debug: cek apakah user sudah login
+      debugPrint('User logged in: ${request.loggedIn}');
+      debugPrint('Sending to: $url');
+      debugPrint('Payload: $payload');
+      
+      // Gunakan post biasa (bukan postJson) agar CSRF token dikirim dengan benar
+      final response = await request.post(
         url,
-        jsonEncode(payload),
+        payload,
       );
+      
+      debugPrint('Response: $response');
 
       setState(() => _isLoading = false);
 

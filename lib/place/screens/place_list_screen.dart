@@ -189,7 +189,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                   child: Stack(
                     children: [
                       Image.asset(
-                        'assets/images/hero-background.png',
+                        'assets/images/hero-background2.png',
                         width: double.infinity,
                         fit: BoxFit.cover,
                         height: 300,
@@ -314,17 +314,18 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
                               ),
                               const SizedBox(height: 24),
 
-                              // --- ALL PLACES GRID ---
-                              const Text("Explore Venues",
-                                  style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 12),
 
                               if (_provinceStats.isNotEmpty || _isProvinceLoading || _provinceError != null) ...[
                                 _buildProvinceSection(),
                                 const SizedBox(height: 24),
                               ],
+
+                                                            // --- ALL PLACES GRID ---
+                              const Text("Explore Venues",
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 6),
 
                               GridView.builder(
                                 shrinkWrap: true,
