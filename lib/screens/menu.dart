@@ -94,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              
+
               // GREETING SECTION
               Text(
                 "Hello,",
@@ -277,17 +277,17 @@ class _MyHomePageState extends State<MyHomePage> {
               _isLoadingPlaces
                   ? const Center(child: CircularProgressIndicator())
                   : _recommendedPlaces.isEmpty
-                      ? const Center(child: Text("No places available"))
-                      : SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _recommendedPlaces.length,
-                            itemBuilder: (context, index) {
-                              return _buildPlaceCard(_recommendedPlaces[index]);
-                            },
-                          ),
-                        ),
+                  ? const Center(child: Text("No places available"))
+                  : SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _recommendedPlaces.length,
+                  itemBuilder: (context, index) {
+                    return _buildPlaceCard(_recommendedPlaces[index]);
+                  },
+                ),
+              ),
               const SizedBox(height: 16),
 
               // VIEW ALL PLACES BUTTON
@@ -504,17 +504,17 @@ class _MyHomePageState extends State<MyHomePage> {
               Positioned.fill(
                 child: imageUrl != null
                     ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.place, size: 40, color: Colors.grey),
-                        ),
-                      )
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.place, size: 40, color: Colors.grey),
+                  ),
+                )
                     : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.place, size: 40, color: Colors.grey),
-                      ),
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.place, size: 40, color: Colors.grey),
+                ),
               ),
               // Gradient Overlay
               Positioned.fill(
