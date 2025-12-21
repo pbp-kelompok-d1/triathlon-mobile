@@ -362,25 +362,65 @@ class _TicketFormPageState extends State<TicketFormPage> {
   }
 
   Widget _buildActionButtons(CookieRequest request) {
-    return Row(
-      children: [
-        Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
-        const SizedBox(width: 16),
-        Expanded(
+  final primaryColor = Theme.of(context).colorScheme.primary;
+
+  return Row(
+    children: [
+      Expanded(
+        child: SizedBox(
+          height: 44,
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor, width: 1),
+              shape: const StadiumBorder(),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: SizedBox(
+          height: 44,
           child: ElevatedButton(
             onPressed: _isLoading ? null : () => _submitForm(request),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: const StadiumBorder(),
+              elevation: 0,
             ),
-            child: _isLoading 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                : Text(widget.ticket != null ? 'Update Ticket' : 'Submit Booking'),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    widget.ticket != null
+                        ? 'Update Ticket'
+                        : 'Submit Booking',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
+
 }
