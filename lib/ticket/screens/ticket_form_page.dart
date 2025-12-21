@@ -1,15 +1,13 @@
-// lib/ticket/screens/ticket_form_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/ticket_model.dart';
-import '../../place/models/place.dart';
+import '../../place/models/place.dart'; // Sesuaikan path model Place Anda
 import '../../constants.dart';
 
 class TicketFormPage extends StatefulWidget {
   final Ticket? ticket;
-
   const TicketFormPage({Key? key, this.ticket}) : super(key: key);
 
   @override
@@ -19,8 +17,7 @@ class TicketFormPage extends StatefulWidget {
 class _TicketFormPageState extends State<TicketFormPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _customerNameController = TextEditingController();
-  final TextEditingController _ticketQuantityController =
-      TextEditingController(text: '1');
+  final TextEditingController _ticketQuantityController = TextEditingController(text: '1');
 
   List<Place> _places = [];
   Place? _selectedPlace;
@@ -29,6 +26,7 @@ class _TicketFormPageState extends State<TicketFormPage> {
   bool _isLoadingPlaces = false;
   bool _hasFetchedPlaces = false;
 
+  // Getter untuk menghitung total harga secara real-time
   double get totalPrice {
     if (_selectedPlace == null) return 0.0;
     final quantity = int.tryParse(_ticketQuantityController.text) ?? 1;
@@ -39,11 +37,18 @@ class _TicketFormPageState extends State<TicketFormPage> {
   @override
   void initState() {
     super.initState();
+    // Inisialisasi data jika dalam mode EDIT
     if (widget.ticket != null) {
       _customerNameController.text = widget.ticket!.customerName;
       _ticketQuantityController.text = widget.ticket!.ticketQuantity.toString();
       _selectedDate = widget.ticket!.bookingDate;
+      _selectedPlace = widget.ticket!.place;
     }
+
+    // Listener agar harga terupdate otomatis saat mengetik jumlah tiket
+    _ticketQuantityController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -53,81 +58,57 @@ class _TicketFormPageState extends State<TicketFormPage> {
     super.dispose();
   }
 
-  // --- FUNGSI INCREMENT (DIPERBAIKI) ---
   void _incrementQuantity() {
     int current = int.tryParse(_ticketQuantityController.text) ?? 0;
     if (current < 100) {
-      setState(() {
-        current++;
-        _ticketQuantityController.text = current.toString();
-        // Menjaga kursor tetap di akhir angka
-        _ticketQuantityController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _ticketQuantityController.text.length));
-      });
+      current++;
+      _ticketQuantityController.text = current.toString();
+      _ticketQuantityController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _ticketQuantityController.text.length));
     }
   }
 
-  // --- FUNGSI DECREMENT (DIPERBAIKI) ---
   void _decrementQuantity() {
     int current = int.tryParse(_ticketQuantityController.text) ?? 1;
     if (current > 1) {
-      setState(() {
-        current--;
-        _ticketQuantityController.text = current.toString();
-        // Menjaga kursor tetap di akhir angka
-        _ticketQuantityController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _ticketQuantityController.text.length));
-      });
+      current--;
+      _ticketQuantityController.text = current.toString();
+      _ticketQuantityController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _ticketQuantityController.text.length));
     }
   }
 
   Future<void> _loadPlaces(CookieRequest request) async {
     setState(() => _isLoadingPlaces = true);
-
     try {
       final response = await request.get('$baseUrl/ticket/api/places/');
-
       if (response != null) {
-        List<dynamic> jsonList;
-
-        if (response is List) {
-          jsonList = response;
-        } else if (response is Map && response.containsKey('data')) {
-          jsonList = response['data'];
-        } else {
-          jsonList = [];
-        }
-
+        List<dynamic> jsonList = (response is List) ? response : (response['data'] ?? []);
         final places = jsonList.map((json) => Place.fromJson(json)).toList();
 
         setState(() {
           _places = places;
           _isLoadingPlaces = false;
-
+          // Sync ulang selectedPlace dengan objek dari list API agar referensinya sama
           if (widget.ticket != null && _places.isNotEmpty) {
             try {
-              _selectedPlace = _places.firstWhere(
-                  (p) => p.id == widget.ticket!.place.id);
+              _selectedPlace = _places.firstWhere((p) => p.id == widget.ticket!.place.id);
             } catch (e) {
-              _selectedPlace = null;
+              _selectedPlace = widget.ticket!.place;
             }
           }
         });
-      } else {
-        throw Exception('Response is null');
       }
     } catch (e) {
       setState(() => _isLoadingPlaces = false);
-      if (mounted) {
-        _showErrorSnackBar('Failed to load places: $e');
-      }
+      _showErrorSnackBar('Failed to load places: $e');
     }
   }
 
   Future<void> _submitForm(CookieRequest request) async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPlace == null) {
-      _showErrorSnackBar('Please select a place');
+      _showErrorSnackBar('Please select a valid place from the list');
       return;
     }
     if (_selectedDate == null) {
@@ -135,19 +116,8 @@ class _TicketFormPageState extends State<TicketFormPage> {
       return;
     }
 
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    final selectedDateOnly =
-        DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
-
-    if (selectedDateOnly.isBefore(todayDate)) {
-      _showErrorSnackBar('Booking date cannot be in the past');
-      return;
-    }
-
     setState(() => _isLoading = true);
-
-    final Map<String, dynamic> payload = {
+    final payload = {
       'customer_name': _customerNameController.text,
       'place': _selectedPlace!.id.toString(),
       'booking_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
@@ -156,42 +126,22 @@ class _TicketFormPageState extends State<TicketFormPage> {
 
     try {
       final isEdit = widget.ticket != null;
-      final url = isEdit
-          ? '$baseUrl/ticket/api/${widget.ticket!.id}/update/'
+      final url = isEdit 
+          ? '$baseUrl/ticket/api/${widget.ticket!.id}/update/' 
           : '$baseUrl/ticket/api/tickets/create/';
-
+      
       final response = await request.post(url, payload);
 
-      if (!mounted) return;
-
-      setState(() => _isLoading = false);
-
-      if (response['success'] == true) {
+      if (response['success'] == true || response['status'] == 'success') {
         _showSuccessSnackBar(response['message'] ?? 'Ticket saved successfully');
         Navigator.pop(context, true);
       } else {
-        if (response['errors'] != null) {
-          String errorMessage = '';
-          if (response['errors'] is Map) {
-            (response['errors'] as Map).forEach((field, errors) {
-              if (errors is List && errors.isNotEmpty) {
-                errorMessage += '$field: ${errors[0]}\n';
-              } else {
-                errorMessage += '$field: $errors\n';
-              }
-            });
-          } else {
-            errorMessage = response['errors'].toString();
-          }
-          _showErrorSnackBar(errorMessage.trim());
-        } else {
-          _showErrorSnackBar(response['message'] ?? 'Failed to save ticket');
-        }
+        _showErrorSnackBar(response['message'] ?? 'Failed to save ticket');
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
       _showErrorSnackBar('An error occurred: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -201,64 +151,31 @@ class _TicketFormPageState extends State<TicketFormPage> {
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue.shade600,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+    if (picked != null) setState(() => _selectedDate = picked);
   }
 
   void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
   }
 
   void _showSuccessSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
   }
 
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-
     if (!_hasFetchedPlaces) {
       _hasFetchedPlaces = true;
       Future.microtask(() => _loadPlaces(request));
     }
 
-    final isEdit = widget.ticket != null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Ticket' : 'Book New Ticket'),
+        title: Text(widget.ticket != null ? 'Edit Ticket' : 'Book New Ticket'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: _isLoadingPlaces
           ? const Center(child: CircularProgressIndicator())
@@ -269,287 +186,201 @@ class _TicketFormPageState extends State<TicketFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Customer Name
-                    const Text(
-                      'Customer Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    _buildLabel('Customer Name'),
                     TextFormField(
                       controller: _customerNameController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter customer name',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Customer name is required';
-                        }
-                        if (value.length < 3) {
-                          return 'Customer name must be at least 3 characters';
-                        }
-                        return null;
-                      },
+                      decoration: _buildInputDecoration('Enter customer name'),
+                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
-
                     const SizedBox(height: 20),
 
-                    // Place Dropdown
-                    const Text(
-                      'Place Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<Place>(
-                      value: _selectedPlace,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                      hint: const Text('-- Select Place --'),
-                      isExpanded: true,
-                      items: _places.map((place) {
-                        final priceValue = double.tryParse(place.price) ?? 0.0;
-                        return DropdownMenuItem<Place>(
-                          value: place,
-                          child: Text(
-                            '${place.name} - Rp ${NumberFormat('#,##0', 'id_ID').format(priceValue)}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (Place? newValue) {
+                    _buildLabel('Place Name (Search or Select)'),
+                    
+                    // Autocomplete untuk memilih Place
+                    Autocomplete<Place>(
+                      displayStringForOption: (Place option) => option.name,
+                      initialValue: TextEditingValue(text: _selectedPlace?.name ?? ''),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return _places; // Menampilkan semua jika kolom kosong (seperti dropdown)
+                        }
+                        return _places.where((Place option) => option.name
+                            .toLowerCase()
+                            .contains(textEditingValue.text.toLowerCase()));
+                      },
+                      onSelected: (Place selection) {
                         setState(() {
-                          _selectedPlace = newValue;
+                          _selectedPlace = selection;
                         });
                       },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Please select a place';
-                        }
-                        return null;
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: _buildInputDecoration('Select place...').copyWith(
+                            suffixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (controller.text.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(Icons.clear, size: 20),
+                                    onPressed: () {
+                                      controller.clear();
+                                      setState(() => _selectedPlace = null);
+                                    },
+                                  ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_drop_down),
+                                  onPressed: () {
+                                    if (!focusNode.hasFocus) {
+                                      focusNode.requestFocus();
+                                    }
+                                    // Trigger agar list muncul semua
+                                    controller.text = ''; 
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Please select a place';
+                            if (_selectedPlace == null || _selectedPlace!.name != v) {
+                              return 'Please select a valid place from the list';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 8.0,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width - 40,
+                              constraints: const BoxConstraints(maxHeight: 250),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                              child: ListView.separated(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                separatorBuilder: (_, __) => const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final Place option = options.elementAt(index);
+                                  return ListTile(
+                                    leading: const Icon(Icons.location_on, color: Colors.blue),
+                                    title: Text(option.name),
+                                    subtitle: Text('Rp ${NumberFormat('#,##0', 'id_ID').format(double.tryParse(option.price) ?? 0)}'),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
 
                     const SizedBox(height: 20),
-
-                    // Booking Date
-                    const Text(
-                      'Booking Date',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    _buildLabel('Booking Date'),
                     InkWell(
                       onTap: _selectDate,
                       child: InputDecorator(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                          suffixIcon: const Icon(Icons.calendar_today),
-                        ),
-                        child: Text(
-                          _selectedDate == null
-                              ? 'Select date'
-                              : DateFormat('dd MMM yyyy')
-                                  .format(_selectedDate!),
-                          style: TextStyle(
-                            color: _selectedDate == null
-                                ? Colors.grey.shade600
-                                : Colors.black87,
-                          ),
-                        ),
+                        decoration: _buildInputDecoration('').copyWith(suffixIcon: const Icon(Icons.calendar_today)),
+                        child: Text(_selectedDate == null ? 'Select date' : DateFormat('dd MMM yyyy').format(_selectedDate!)),
                       ),
                     ),
 
                     const SizedBox(height: 20),
-
-                    // Ticket Quantity
-                    const Text(
-                      'Ticket Quantity',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
+                    _buildLabel('Ticket Quantity'),
                     TextFormField(
                       controller: _ticketQuantityController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: '1',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        suffixIcon: Container(
-                          width: 40,
-                          height: 45,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: _incrementQuantity,
-                                  child: const Icon(
-                                    Icons.arrow_drop_up,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: _decrementQuantity,
-                                  child: const Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      decoration: _buildInputDecoration('1').copyWith(
+                        suffixIcon: _buildQuantityActions(),
                       ),
-                      onChanged: (_) => setState(() {}),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        final quantity = int.tryParse(value);
-                        if (quantity == null || quantity < 1) {
-                          return 'Min 1';
-                        }
-                        if (quantity > 100) {
-                          return 'Max 100';
-                        }
-                        return null;
-                      },
                     ),
 
                     const SizedBox(height: 20),
-
-                    // Total Price Display
-                    const Text(
-                      'Estimated Total Price',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Rp ${NumberFormat('#,##0', 'id_ID').format(totalPrice)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Price will be calculated automatically',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-
+                    _buildTotalPriceDisplay(),
                     const SizedBox(height: 32),
 
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => _submitForm(request),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : Text(isEdit ? 'Update' : 'Submit Booking'),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildActionButtons(request),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
+  Widget _buildQuantityActions() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        InkWell(onTap: () => setState(() => _incrementQuantity()), child: const Icon(Icons.arrow_drop_up)),
+        InkWell(onTap: () => setState(() => _decrementQuantity()), child: const Icon(Icons.arrow_drop_down)),
+      ],
+    );
+  }
+
+  Widget _buildTotalPriceDisplay() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Estimated Total Price'),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            border: Border.all(color: Colors.blue.shade100),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            'Rp ${NumberFormat('#,##0', 'id_ID').format(totalPrice)}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(CookieRequest request) {
+    return Row(
+      children: [
+        Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : () => _submitForm(request),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: _isLoading 
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                : Text(widget.ticket != null ? 'Update Ticket' : 'Submit Booking'),
+          ),
+        ),
+      ],
     );
   }
 }
