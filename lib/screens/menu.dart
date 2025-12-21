@@ -12,8 +12,9 @@ import 'package:triathlon_mobile/forum/screens/forum_list.dart';
 import 'package:triathlon_mobile/ticket/screens/ticket_list_page.dart';
 import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
 import 'package:triathlon_mobile/activity/screens/activity_form.dart';
-import 'package:triathlon_mobile/activity/models/activity_model.dart';
 import 'package:triathlon_mobile/constants.dart';
+
+import '../activity/models/activity_model.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -157,16 +158,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-    String username = request.jsonData['username']?.toString() ?? 'Explorer';
+    String username = 'Explorer';
+    if (request.jsonData['username'] != null) {
+      username = request.jsonData['username'].toString();
+    }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: primaryBlue),
+            icon: Icon(Icons.menu, color: Colors.grey[800]),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -177,16 +181,15 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Container(
                 margin: const EdgeInsets.only(right: 16),
                 child: const CircleAvatar(
-                  backgroundColor: primaryBlue,
-                  radius: 18,
-                  child: Icon(Icons.person_rounded, color: Colors.white, size: 20),
+                  backgroundColor: Color(0xFF6366F1),
+                  child: Icon(Icons.person, color: Colors.white, size: 24),
                 ),
               ),
             ),
           ),
         ],
       ),
-      drawer: const LeftDrawer(),
+      drawer: LeftDrawer(),
       endDrawer: const CustomRightDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -221,7 +224,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [primaryBlue, secondaryBlue], 
+                      colors: [primaryBlue, secondaryBlue],
                       begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [BoxShadow(color: primaryBlue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
@@ -304,12 +307,34 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 )),
 
-                const SizedBox(height: 30),
+              // RECOMMENDED PLACES SECTION
+              const Center(
+                child: Text(
+                  "Recommended Places",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6366F1),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  "Great training locations and venues for your\ntriathlon journey!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
                 // Places Section
                 _animateEntrance(6, const Center(child: Text("Recommended Places", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryBlue)))),
                 const SizedBox(height: 20),
-                _animateEntrance(7, _isLoadingPlaces 
+                _animateEntrance(7, _isLoadingPlaces
                   ? const Center(child: CircularProgressIndicator(color: primaryBlue))
                   : SizedBox(
                       height: 200,
@@ -319,7 +344,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemBuilder: (ctx, idx) => _buildPlaceCard(_recommendedPlaces[idx]),
                       ),
                     )),
-                
+
                 const SizedBox(height: 20),
                 _animateEntrance(8, Center(
                   child: OutlinedButton(
@@ -418,7 +443,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(a.title, style: const TextStyle(
-                fontWeight: FontWeight.bold), 
+                fontWeight: FontWeight.bold),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
               Text("${a.distance}m • ${a.sportCategory}", style: TextStyle(
                 fontSize: 12, color: Colors.grey[600])),
@@ -456,6 +481,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  // HELPER: Place Card for Recommended Places
   Widget _buildPlaceCard(Place place) {
     final imageUrl = _resolveImageUrl(place.image);
     return Container(
@@ -466,32 +492,32 @@ class _MyHomePageState extends State<MyHomePage> {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            Positioned.fill(child: imageUrl.isNotEmpty 
+            Positioned.fill(child: imageUrl.isNotEmpty
               ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (c,e,s) => const Icon(Icons.place))
               : const Icon(Icons.place)),
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter, 
-                    end: Alignment.bottomCenter, 
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      Colors.transparent, 
+                      Colors.transparent,
                       Colors.black.withOpacity(0.8)])
                     )
                   )
                 ),
             Positioned(
-              bottom: 10, 
-              left: 10, 
-              right: 10, 
+              bottom: 10,
+              left: 10,
+              right: 10,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(place.name, style: const TextStyle(
-                    color: Colors.white, 
-                    fontWeight: FontWeight.bold, 
-                    fontSize: 12), 
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                   Text(place.city ?? "-", style: const TextStyle(
                     color: Colors.white70, fontSize: 10)),
