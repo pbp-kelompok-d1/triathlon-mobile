@@ -140,8 +140,6 @@ class _ActivityMenuState extends State<ActivityMenu> {
             backgroundColor: Colors.green,
           ),
         );
-        // Return true to indicate successful creation
-        Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
