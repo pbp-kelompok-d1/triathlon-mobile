@@ -9,11 +9,11 @@ import 'package:triathlon_mobile/ticket/screens/ticket_list_page.dart';
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
-  // Warna utama yang konsisten dengan Right Drawer
+  // Consistent Coloring
   static const primaryColor = Color(0xFF433BFF);
   static const secondaryColor = Color(0xFF2D27A8);
 
-  // Helper untuk animasi masuk (Staggered Entrance)
+  // Animating the entrance (staggered)
   Widget _animateEntrance(int index, Widget child) {
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 450 + (index * 80)),
@@ -23,7 +23,7 @@ class LeftDrawer extends StatelessWidget {
         return Opacity(
           opacity: value,
           child: Transform.translate(
-            offset: Offset(-30 * (1 - value), 0), // Muncul dari kiri (berlawanan dengan Right Drawer)
+            offset: Offset(-30 * (1 - value), 0), 
             child: child,
           ),
         );
@@ -38,7 +38,7 @@ class LeftDrawer extends StatelessWidget {
       backgroundColor: Colors.white,
       child: Column(
         children: [
-          // 1. Header dengan Logo dan Slogan
+          // Header with logo
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
@@ -78,7 +78,7 @@ class LeftDrawer extends StatelessWidget {
             )),
           ),
 
-          // 2. List Menu Items
+          // List of Menu Items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
