@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏊‍♂️🚴‍♂️🏃‍♂️ **TRIATHLON**  
+# 🏊‍♂️🚴‍♂️🏃‍♂️ **TRIATHLON** [![Build Status](https://app.bitrise.io/app/3b5e62c5-5201-4305-a4a0-460a802bc349/status.svg?token=JdURd9e3M7Uzkr81PhIpIg&branch=main)](https://app.bitrise.io/app/3b5e62c5-5201-4305-a4a0-460a802bc349)  
 ### _Integrated Triathlon Lifestyle Platform_
 
 </div>
@@ -20,7 +20,7 @@
 ---
 
 ## TAUTAN APLIKASI
-[Download Triathlon Now!](https://app.bitrise.io/app/3b5e62c5-5201-4305-a4a0-460a802bc349/installable-artifacts/2d081c9ce1bbc233/public-install-page/cb045bfe553f212a45f65672f56666f9)
+[Download Triathlon Now!](https://app.bitrise.io/app/3b5e62c5-5201-4305-a4a0-460a802bc349/installable-artifacts/a264195e716c2995/public-install-page/a2b025bfb6cf98ac9d137a7a4960b988)
 
 ## 🧭 **Deskripsi Aplikasi**
 
@@ -151,6 +151,30 @@ Pengguna hanya dapat memilih lokasi olahraga yang valid dan sudah terdaftar di s
 #### 💬 Forum dan Place
 Saat pengguna membuat forum baru terkait suatu tempat, aplikasi mengirimkan ID tempat yang sedang dibahas serta ID pengguna ke backend.
 Dengan cara ini, diskusi di forum dapat ditampilkan secara spesifik di halaman detail tempat olahraga yang bersangkutan.
+
+---
+## **Blog**
+Syakirah - Ticket
+
+https://medium.com/@syaasiui/building-scalable-flutter-features-lessons-from-implementing-a-ticket-management-module-e65ec27d93cd
+
+Helmi - User Profile
+
+https://medium.com/@alfarissimhelmi/elevating-user-experience-implementing-staggered-pulsing-animations-in-flutter-b969e37e4084 
+
+Aidam - Forum 
+
+1. https://www.linkedin.com/posts/aidamkaila_flutter-mobiledev-pbp-activity-7408457829206130688-hhN3?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
+2. https://www.linkedin.com/posts/aidamkaila_flutterperformance-mobileux-dart-activity-7408460584842825728-n6O8?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
+3. https://www.linkedin.com/posts/aidamkaila_unittesting-flutter-softwaretesting-activity-7408467574214057984-cJAr?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
+
+Jarred - Shop 
+
+https://medium.com/@jarrrredddd/menghidupkan-ui-statis-implementasi-scroll-coupled-parallax-animation-pada-flutter-2bdb3919236e?postPublishedType=initial
+
+Justin - Place
+
+https://medium.com/@jdwitamaseniang/enhancing-user-experience-in-flutter-implementing-shimmer-loading-for-the-triathlon-app-70337c52d119
 
 ---
 ## 🔗 **Tautan Penting**
