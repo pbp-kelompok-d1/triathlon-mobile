@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _bikeCount = 0;
   int _runCount = 0;
 
-  // Definisi Warna Konsisten
+  // Consistent Coloring
   static const primaryBlue = Color(0xFF433BFF);
   static const secondaryBlue = Color(0xFF2D27A8);
 
@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // --- ANIMATION HELPER ---
+  // Animation Helper
   Widget _animateEntrance(int index, Widget child) {
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 500 + (index * 80)),
@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // --- LOGIC FUNCTIONS (Tetap Sama) ---
+  // Logic
   Future<void> _loadRecommendedPlaces() async {
     try {
       final places = await _placeService.fetchPlaces();
@@ -216,7 +216,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(height: 24),
 
-                // 2. START TRAINING BUTTON (Animated Gradient)
+                // Start Training
                 _animateEntrance(1, Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -243,7 +243,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(height: 30),
 
-                // 3. SUMMARY CARD (Animated)
+                // Summary Card
                 _animateEntrance(2, _buildSectionCard(
                   title: "Your Training Summary",
                   subtitle: "Track your progress",
@@ -267,7 +267,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(height: 20),
 
-                // 4. RECENT ACTIVITY (Animated)
+                // Recent Activity
                 _animateEntrance(3, _buildSectionCard(
                   title: "Recent Activity",
                   subtitle: "Latest session",
@@ -286,7 +286,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(height: 30),
 
-                // 5. QUICK ACCESS (Animated Grid)
+                // Quick Access
                 _animateEntrance(4, const Text("Quick Access", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
                 const SizedBox(height: 16),
                 _animateEntrance(5, GridView.count(
@@ -306,7 +306,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(height: 30),
 
-                // 6. PLACES SECTION (Animated)
+                // Places Section
                 _animateEntrance(6, const Center(child: Text("Recommended Places", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryBlue)))),
                 const SizedBox(height: 20),
                 _animateEntrance(7, _isLoadingPlaces 
@@ -342,7 +342,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // --- UI COMPONENTS ---
+  // Widgets
 
   Widget _buildSectionCard({required String title, required String subtitle, required IconData icon, required Color iconColor, Widget? trailing, required Widget child, VoidCallback? onTap}) {
     return GestureDetector(
