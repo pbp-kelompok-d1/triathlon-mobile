@@ -275,7 +275,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      return _buildUserCard(_usersList[index]);
+                      return _animateUserCard(index, _buildUserCard(_usersList[index]));
                     },
                     childCount: _usersList.length,
                   ),
@@ -287,6 +287,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _animateUserCard(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      // Durasi bertambah berdasarkan index agar muncul satu-satu
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            // Slide up dari bawah sejauh 40 pixel
+            offset: Offset(0, 40 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 

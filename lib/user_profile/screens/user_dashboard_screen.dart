@@ -239,6 +239,23 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 
+  Widget _animateTask(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 100)), // Delay bertahap
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)), // Efek slide up
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   Widget _buildFilterSection() {
     return Container(
       margin: const EdgeInsets.all(16),
@@ -343,25 +360,30 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Widget _buildDashboardContent() {
-    return RefreshIndicator(
-      onRefresh: _fetchDashboardData,
-      color: primaryColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            if (_selectedView == 'all' || _selectedView == 'posts')
-              _buildPostsSection(),
-            if (_selectedView == 'all' || _selectedView == 'replies')
-              _buildRepliesSection(),
-            if (_selectedView == 'all' || _selectedView == 'wishlist')
-              _buildWishlistSection(),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
+  return AnimatedSwitcher(
+    duration: const Duration(milliseconds: 500),
+    switchInCurve: Curves.easeOut,
+    switchOutCurve: Curves.easeIn,
+    // Menambahkan animasi scale dan fade saat filter berubah
+    transitionBuilder: (Widget child, Animation<double> animation) {
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(scale: Tween(begin: 0.95, end: 1.0).animate(animation), child: child),
+      );
+    },
+    child: Padding(padding:   const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      key: ValueKey<String>(_selectedView), // Kunci penting agar animasi terpicu
+      children: [
+        if (_selectedView == 'all' || _selectedView == 'posts') _buildPostsSection(),
+        if (_selectedView == 'all' || _selectedView == 'replies') _buildRepliesSection(),
+        if (_selectedView == 'all' || _selectedView == 'wishlist') _buildWishlistSection(),
+        const SizedBox(height: 40),
+      ],
+    ),
+    )
+  );
+}
 
   Widget _buildPostsSection() {
     return Column(
@@ -402,7 +424,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _posts.length,
             separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildPostCard(_posts[idx]),
+            itemBuilder: (ctx, idx) => _animateTask(idx, _buildPostCard(_posts[idx])),
           ),
         const SizedBox(height: 24),
       ],
@@ -531,7 +553,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _replies.length,
             separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildReplyCard(_replies[idx]),
+            itemBuilder: (ctx, idx) => _animateTask(idx, _buildReplyCard(_replies[idx])),
           ),
         const SizedBox(height: 24),
       ],
@@ -668,7 +690,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ),
                 itemCount: _wishlistProducts.length,
                 itemBuilder: (context, index) {
-                  return _buildWishlistCard(_wishlistProducts[index]);
+                  return _animateTask(index, _buildWishlistCard(_wishlistProducts[index]));
                 },
               );
             },

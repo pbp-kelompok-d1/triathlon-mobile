@@ -217,7 +217,8 @@ class _ProductListPageState extends State<ProductListPage>
               backgroundColor: Colors.pink[600],
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
           const SizedBox(width: 8),
@@ -234,7 +235,8 @@ class _ProductListPageState extends State<ProductListPage>
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
           const SizedBox(width: 8),
@@ -243,17 +245,20 @@ class _ProductListPageState extends State<ProductListPage>
               onPressed: () async {
                 final result = await Navigator.push<bool>(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProductFormPage()),
+                  MaterialPageRoute(
+                      builder: (_) => const ProductFormPage()),
                 );
                 if (result == true) _refresh();
               },
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add Product', style: TextStyle(fontSize: 13)),
+              label: const Text('Add Product',
+                  style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[700],
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
               ),
             ),
           const SizedBox(width: 16),
@@ -287,7 +292,8 @@ class _ProductListPageState extends State<ProductListPage>
               onPressed: () async {
                 final result = await Navigator.push<bool>(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProductFormPage()),
+                  MaterialPageRoute(
+                      builder: (_) => const ProductFormPage()),
                 );
                 if (result == true) _refresh();
               },
@@ -319,8 +325,8 @@ class _ProductListPageState extends State<ProductListPage>
               controller: _scrollController,
               slivers: [
                 SliverToBoxAdapter(
-                  child: AnimatedBuilder(
-                    animation: _scrollController,
+                  child: ListenableBuilder(
+                    listenable: _scrollController,
                     builder: (context, child) {
                       final offset = _scrollController.hasClients
                           ? _scrollController.offset
@@ -446,8 +452,10 @@ class _ProductListPageState extends State<ProductListPage>
                     child: FutureBuilder<List<Product>>(
                       future: _productsFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         }
 
                         if (snapshot.hasError) {
@@ -882,7 +890,9 @@ class _ProductCardState extends State<_ProductCard>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ??
-                  (_isInWishlist ? 'Added to wishlist' : 'Removed from wishlist')),
+                  (_isInWishlist
+                      ? 'Added to wishlist'
+                      : 'Removed from wishlist')),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
@@ -980,7 +990,6 @@ class _ProductCardState extends State<_ProductCard>
     }
   }
 
-
   Future<void> _editProduct(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
@@ -1039,7 +1048,6 @@ class _ProductCardState extends State<_ProductCard>
     final imageUrl = _imageUrl;
 
     final isAdmin = role == 'ADMIN';
-    final isSeller = role == 'SELLER';
 
     final currentUsername = request.jsonData['username'] as String?;
     final isOwnProduct = currentUsername != null &&
@@ -1047,6 +1055,21 @@ class _ProductCardState extends State<_ProductCard>
         currentUsername == widget.product.sellerUsername;
 
     final canEditDelete = isAdmin || isOwnProduct;
+
+    // Responsive sizing based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
+
+    final buttonFontSize =
+    isSmallScreen ? 9.0 : (isMediumScreen ? 10.0 : 11.0);
+    final buttonPaddingVertical =
+    isSmallScreen ? 4.0 : (isMediumScreen ? 5.0 : 6.0);
+    final buttonPaddingHorizontal =
+    isSmallScreen ? 4.0 : (isMediumScreen ? 6.0 : 8.0);
+    final buttonMinHeight =
+    isSmallScreen ? 32.0 : (isMediumScreen ? 36.0 : 40.0);
+    final iconSize = isSmallScreen ? 12.0 : (isMediumScreen ? 13.0 : 14.0);
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -1056,7 +1079,8 @@ class _ProductCardState extends State<_ProductCard>
           scale: _scaleAnimation,
           child: Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: InkWell(
               onTap: () async {
                 final result = await Navigator.push<Map<String, dynamic>>(
@@ -1068,7 +1092,8 @@ class _ProductCardState extends State<_ProductCard>
 
                 if (result != null && mounted) {
                   final hasChanged = result['hasChanged'] as bool? ?? false;
-                  final isInWishlist = result['isInWishlist'] as bool? ?? false;
+                  final isInWishlist =
+                      result['isInWishlist'] as bool? ?? false;
 
                   if (hasChanged) {
                     setState(() {
@@ -1086,7 +1111,8 @@ class _ProductCardState extends State<_ProductCard>
                     child: Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12)),
                           child: AspectRatio(
                             aspectRatio: 1,
                             child: imageUrl != null
@@ -1095,12 +1121,14 @@ class _ProductCardState extends State<_ProductCard>
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                 color: Colors.grey[200],
-                                child: Icon(Icons.broken_image, size: 50, color: Colors.grey[400]),
+                                child: Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey[400]),
                               ),
                             )
                                 : Container(
                               color: Colors.grey[200],
-                              child: Icon(Icons.image, size: 50, color: Colors.grey[400]),
+                              child: Icon(Icons.image,
+                                  size: 50, color: Colors.grey[400]),
                             ),
                           ),
                         ),
@@ -1177,37 +1205,48 @@ class _ProductCardState extends State<_ProductCard>
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(Icons.label_outline, size: 10, color: Colors.blue[700]),
+                              Icon(Icons.label_outline,
+                                  size: 10, color: Colors.blue[700]),
                               const SizedBox(width: 2),
                               Expanded(
                                 child: Text(
                                   widget.product.category,
-                                  style: TextStyle(fontSize: 10, color: Colors.blue[700]),
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.blue[700]),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(width: 2),
-                              const Icon(Icons.inventory_2_outlined, size: 10, color: Colors.grey),
+                              const Icon(Icons.inventory_2_outlined,
+                                  size: 10, color: Colors.grey),
                               const SizedBox(width: 2),
-                              Text('${widget.product.stock}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                              Text('${widget.product.stock}',
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.grey)),
                             ],
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            widget.currencyFormatter.format(widget.product.price),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue[700]),
+                            widget.currencyFormatter
+                                .format(widget.product.price),
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue[700]),
                           ),
                           if (widget.product.sellerUsername != null) ...[
                             const SizedBox(height: 2),
                             Row(
                               children: [
-                                const Icon(Icons.person_outline, size: 10, color: Colors.grey),
+                                const Icon(Icons.person_outline,
+                                    size: 10, color: Colors.grey),
                                 const SizedBox(width: 2),
                                 Expanded(
                                   child: Text(
                                     widget.product.sellerUsername!,
-                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                    style: const TextStyle(
+                                        fontSize: 10, color: Colors.grey),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1216,71 +1255,136 @@ class _ProductCardState extends State<_ProductCard>
                             ),
                           ],
                           const Spacer(),
+                          // Responsive Add to Cart button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () => _addToCart(context),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: buttonPaddingVertical,
+                                  horizontal: buttonPaddingHorizontal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6)),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(double.infinity, 40),
+                                minimumSize:
+                                Size(double.infinity, buttonMinHeight),
                               ),
-                              child: const Text('Add to Cart', style: TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Add to Cart',
+                                  style: TextStyle(fontSize: buttonFontSize),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: isSmallScreen ? 2 : 4),
+                          // Responsive Wishlist button
                           SizedBox(
                             width: double.infinity,
                             child: _isLoadingWishlistState
                                 ? OutlinedButton(
                               onPressed: null,
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                side: BorderSide(color: Colors.pink[600]!),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: buttonPaddingVertical,
+                                  horizontal: buttonPaddingHorizontal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                    BorderRadius.circular(6)),
+                                tapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                                side:
+                                BorderSide(color: Colors.pink[600]!),
                                 foregroundColor: Colors.pink[600],
-                                minimumSize: const Size(double.infinity, 40),
+                                minimumSize: Size(
+                                    double.infinity, buttonMinHeight),
                               ),
-                              child: const SizedBox(
-                                height: 14,
-                                width: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                              child: SizedBox(
+                                height: iconSize,
+                                width: iconSize,
+                                child: const CircularProgressIndicator(
+                                    strokeWidth: 2),
                               ),
                             )
                                 : AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
-                              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                              transitionBuilder: (child, animation) =>
+                                  ScaleTransition(
+                                      scale: animation, child: child),
                               child: _isInWishlist
                                   ? ElevatedButton.icon(
-                                key: const ValueKey('in_wishlist'),
-                                onPressed: _isTogglingWishlist ? null : _toggleWishlist,
-                                icon: const Icon(Icons.favorite, size: 14),
-                                label: const Text('In Wishlist', style: TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                                key:
+                                const ValueKey('in_wishlist'),
+                                onPressed: _isTogglingWishlist
+                                    ? null
+                                    : _toggleWishlist,
+                                icon: Icon(Icons.favorite,
+                                    size: iconSize),
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'In Wishlist',
+                                    style: TextStyle(
+                                        fontSize: buttonFontSize),
+                                  ),
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: buttonPaddingVertical,
+                                    horizontal:
+                                    buttonPaddingHorizontal,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(6)),
+                                  tapTargetSize:
+                                  MaterialTapTargetSize
+                                      .shrinkWrap,
                                   backgroundColor: Colors.pink[600],
                                   foregroundColor: Colors.white,
-                                  minimumSize: const Size(double.infinity, 40),
+                                  minimumSize: Size(double.infinity,
+                                      buttonMinHeight),
                                 ),
                               )
                                   : OutlinedButton.icon(
-                                key: const ValueKey('add_wishlist'),
-                                onPressed: _isTogglingWishlist ? null : _toggleWishlist,
-                                icon: const Icon(Icons.favorite_border, size: 14),
-                                label: const Text('Wishlist', style: TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                                key:
+                                const ValueKey('add_wishlist'),
+                                onPressed: _isTogglingWishlist
+                                    ? null
+                                    : _toggleWishlist,
+                                icon: Icon(Icons.favorite_border,
+                                    size: iconSize),
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Wishlist',
+                                    style: TextStyle(
+                                        fontSize: buttonFontSize),
+                                  ),
+                                ),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  side: BorderSide(color: Colors.pink[600]!),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: buttonPaddingVertical,
+                                    horizontal:
+                                    buttonPaddingHorizontal,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(6)),
+                                  tapTargetSize:
+                                  MaterialTapTargetSize
+                                      .shrinkWrap,
+                                  side: BorderSide(
+                                      color: Colors.pink[600]!),
                                   foregroundColor: Colors.pink[600],
-                                  minimumSize: const Size(double.infinity, 40),
+                                  minimumSize: Size(double.infinity,
+                                      buttonMinHeight),
                                 ),
                               ),
                             ),
@@ -1422,16 +1526,19 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                     controller: _name,
                     decoration: const InputDecoration(
                       labelText: 'Name',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                    validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _description,
                     decoration: const InputDecoration(
                       labelText: 'Description',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     maxLines: 3,
                   ),
@@ -1440,27 +1547,34 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                     controller: _price,
                     decoration: const InputDecoration(
                       labelText: 'Price',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid number' : null,
+                    validator: (v) => v == null || int.tryParse(v) == null
+                        ? 'Invalid number'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _stock,
                     decoration: const InputDecoration(
                       labelText: 'Stock',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid number' : null,
+                    validator: (v) => v == null || int.tryParse(v) == null
+                        ? 'Invalid number'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _thumbnail,
                     decoration: const InputDecoration(
                       labelText: 'Thumbnail URL',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       hintText: 'Enter image URL',
                     ),
                   ),
@@ -1469,7 +1583,8 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                     value: _category,
                     decoration: const InputDecoration(
                       labelText: 'Category',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     items: _categories
                         .map((c) => DropdownMenuItem(
@@ -1478,14 +1593,17 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                     ))
                         .toList(),
                     onChanged: (val) => setState(() => _category = val),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) =>
+                    v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: _loading ? null : () => Navigator.pop(context, false),
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.pop(context, false),
                           child: const Text('Cancel'),
                         ),
                       ),
@@ -1497,7 +1615,8 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                               ? const SizedBox(
                             height: 18,
                             width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child:
+                            CircularProgressIndicator(strokeWidth: 2),
                           )
                               : const Text('Save'),
                         ),
@@ -1513,4 +1632,3 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     );
   }
 }
-

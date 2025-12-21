@@ -3,7 +3,7 @@ import 'dart:convert';
 class Activity {
   String id;
   String title;
-  String duration; // "HH:MM:SS" or similar string representation
+  String duration; // "HH:MM:SS"
   int distance;
   String notesShort;
   String notesFull;

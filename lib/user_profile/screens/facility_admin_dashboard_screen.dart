@@ -186,6 +186,23 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     );
   }
 
+  Widget _animateTask(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 100)), // Delay bertahap
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)), // Efek slide up
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   Widget _buildFilterSection() {
     return Container(
       margin: const EdgeInsets.all(16),
@@ -374,7 +391,14 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
     required MaterialColor color,
     bool fullWidth = false,
   }) {
-    return Container(
+    return TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0.8, end: 1.0),
+    duration: const Duration(milliseconds: 600),
+    curve: Curves.elasticOut,
+    builder: (context, scale, child) {
+      return Transform.scale(scale: scale, child: child);
+    },
+    child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -425,6 +449,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
           ),
         ],
       ),
+    )
     );
   }
 
@@ -467,7 +492,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
             physics: const NeverScrollableScrollPhysics(),
             itemCount: facilities.length,
             separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildFacilityCard(facilities[idx]),
+            itemBuilder: (ctx, idx) => _animateTask(idx, _buildFacilityCard(facilities[idx])),
           ),
         const SizedBox(height: 24),
       ],
@@ -476,7 +501,6 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
 
   // CARD FACILITY: GAMBAR & NAVIGASI
   Widget _buildFacilityCard(Place facility) {
-    // Pastikan key image sesuai dengan model Flutter
     final imageUrl = facility.image; 
     
     return Card(
@@ -625,7 +649,7 @@ class _FacilityAdminDashboardScreenState extends State<FacilityAdminDashboardScr
             physics: const NeverScrollableScrollPhysics(),
             itemCount: tickets.length,
             separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildTicketCard(tickets[idx]),
+            itemBuilder: (ctx, idx) => _animateTask(idx, _buildTicketCard(tickets[idx])),
           ),
       ],
     );
