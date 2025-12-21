@@ -22,13 +22,13 @@ class _ActivityMenuState extends State<ActivityMenu> {
   int? _minDistance;
   int? _maxDistance;
 
-  // Cache last fetched activities so we can build the sport dropdown list.
+  // Cache last fetched activities to build the sport dropdown list
   List<Activity> _cachedActivities = [];
 
   @override
   void initState() {
     super.initState();
-    // Need context for CookieRequest, so do it after first frame.
+    // Need context for CookieRequest
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refresh();
     });
@@ -297,8 +297,6 @@ class _ActivityMenuState extends State<ActivityMenu> {
       _minDistance = result.minDistance;
       _maxDistance = result.maxDistance;
     });
-
-    // You asked to refresh on updates too (even though filtering is local).
     _refresh();
   }
 
@@ -368,9 +366,6 @@ class _ActivityMenuState extends State<ActivityMenu> {
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-
-    // This is how pbp_django_auth commonly stores username after login.
-    // If your project differs, you can adjust this line.
     final String? username = (request.jsonData is Map && request.jsonData['username'] != null)
         ? request.jsonData['username'].toString()
         : null;

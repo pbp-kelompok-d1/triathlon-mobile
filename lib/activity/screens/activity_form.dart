@@ -68,7 +68,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
               }
           }
       } catch (e) {
-          // ignore
+          // ignore lol
       }
 
       // Date
@@ -77,7 +77,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         _selectedDate = DateTime.parse(widget.activity!.doneAtIso);
         _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
       } catch (e) {
-        // ignore
+        // ignore lol
       }
     } else {
         // Default date to today
@@ -111,7 +111,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
       final url = editing ? "$baseUrl/activities/edit/${widget.activity!.id}" : "$baseUrl/activities/create/";
 
-      // Send POST request to create endpoint
+      // Send POST request to correct endpoint
       final response = await request.post(
         url,
         body,

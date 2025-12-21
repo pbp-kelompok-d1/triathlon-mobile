@@ -3,9 +3,6 @@ import 'package:triathlon_mobile/activity/models/activity_model.dart';
 
 class ActivityCard extends StatelessWidget {
   final Activity activity;
-
-  /// Callbacks mirror your JS buttons.
-  /// You can open modals, navigate to detail/edit pages, or show dialogs.
   final VoidCallback onView;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -19,7 +16,7 @@ class ActivityCard extends StatelessWidget {
   });
 
   String _displayHM(String duration) {
-    // Expects "HH:MM:SS" (like your API returns). Falls back safely.
+    // Expects "HH:MM:SS" 
     final parts = duration.split(':');
     if (parts.length < 2) return duration;
 
@@ -68,7 +65,7 @@ class ActivityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: title/metadata + kcal badge
+            // metadata + kcal badge
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -116,7 +113,7 @@ class ActivityCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF), // light blue-ish
+                    color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -124,7 +121,7 @@ class ActivityCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D4ED8), // blue text-ish
+                      color: Color(0xFF1D4ED8), 
                     ),
                   ),
                 ),
@@ -133,7 +130,6 @@ class ActivityCard extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            // 3-column "grid" like your JS card
             Row(
               children: [
                 Expanded(
@@ -172,7 +168,7 @@ class ActivityCard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Buttons row: View, Edit (expanded), Delete
+            // Buttons row: View, Edit, Delete
             Row(
               children: [
                 ElevatedButton(
