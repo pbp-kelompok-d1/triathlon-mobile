@@ -23,6 +23,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   late Future<List<Review>> _reviewsFuture;
   final PlaceService _placeService = PlaceService();
   late Place _currentPlace;
+  bool _hasChanges = false; // Track if any changes were made
 
   // Variabel untuk Form Review
   int _rating = 0;
@@ -38,6 +39,27 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   void _refreshReviews() {
     setState(() {
       _reviewsFuture = _placeService.fetchReviews(_currentPlace.id);
+    });
+    // After fetching reviews, update the rating
+    _reviewsFuture.then((reviews) {
+      if (mounted && reviews.isNotEmpty) {
+        final avgRating = _computeAverage(reviews);
+        setState(() {
+          _currentPlace = Place(
+            id: _currentPlace.id,
+            name: _currentPlace.name,
+            description: _currentPlace.description,
+            city: _currentPlace.city,
+            province: _currentPlace.province,
+            genre: _currentPlace.genre,
+            price: _currentPlace.price,
+            image: _currentPlace.image,
+            averageRating: avgRating,
+            reviewCount: reviews.length,
+            isFeatured: _currentPlace.isFeatured,
+          );
+        });
+      }
     });
   }
 
@@ -80,8 +102,29 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           _commentController.clear();
           setState(() {
             _rating = 0;
+            _hasChanges = true; // Mark that changes were made
           });
           _refreshReviews(); // Refresh List Review
+          // Update local rating from response if available
+          if (response['new_average'] != null) {
+            setState(() {
+              _currentPlace = Place(
+                id: _currentPlace.id,
+                name: _currentPlace.name,
+                description: _currentPlace.description,
+                city: _currentPlace.city,
+                province: _currentPlace.province,
+                genre: _currentPlace.genre,
+                price: _currentPlace.price,
+                image: _currentPlace.image,
+                averageRating: (response['new_average'] as num).toDouble(),
+                reviewCount:
+                    response['review_count'] ??
+                    (_currentPlace.reviewCount ?? 0) + 1,
+                isFeatured: _currentPlace.isFeatured,
+              );
+            });
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Review berhasil ditambahkan!")),
           );
@@ -282,455 +325,472 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     final imageUrl = _resolveImageUrl(_currentPlace.image);
     final canManage = _canManagePlace() && request.loggedIn;
 
-    return Scaffold(
-      // TOMBOL FAB UNTUK ADD REVIEW
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          if (!request.loggedIn) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Silakan login terlebih dahulu.")),
-            );
-          } else {
-            _showAddReviewModal(context, request);
-          }
-        },
-        label: const Text("Review"),
-        icon: const Icon(Icons.rate_review),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // Return _hasChanges to trigger refresh in parent screen
+          Navigator.of(context).pop(_hasChanges);
+        }
+      },
+      child: Scaffold(
+        // TOMBOL FAB UNTUK ADD REVIEW
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            if (!request.loggedIn) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Silakan login terlebih dahulu.")),
+              );
+            } else {
+              _showAddReviewModal(context, request);
+            }
+          },
+          label: const Text("Review"),
+          icon: const Icon(Icons.rate_review),
+          backgroundColor: Colors.blue[900],
+          foregroundColor: Colors.white,
+        ),
 
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 260,
-            pinned: true,
-            backgroundColor: Colors.blue[900],
-            actions: canManage
-                ? [
-                    // Edit button
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.white),
-                      onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PlaceEditScreen(place: _currentPlace),
-                          ),
-                        );
-                        if (result == true) {
-                          // Refresh data after edit
-                          Navigator.pop(context, true);
-                        }
-                      },
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 260,
+              pinned: true,
+              backgroundColor: Colors.blue[900],
+              actions: canManage
+                  ? [
+                      // Edit button
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.white),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PlaceEditScreen(place: _currentPlace),
+                            ),
+                          );
+                          if (result == true) {
+                            // Refresh data after edit
+                            Navigator.pop(context, true);
+                          }
+                        },
+                      ),
+                      // Delete button
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.white),
+                        onPressed: () => _showDeleteConfirmation(request),
+                      ),
+                    ]
+                  : null,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: imageUrl != null
+                          ? Image.network(imageUrl, fit: BoxFit.cover)
+                          : Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.place, size: 48),
+                            ),
                     ),
-                    // Delete button
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.white),
-                      onPressed: () => _showDeleteConfirmation(request),
-                    ),
-                  ]
-                : null,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  Positioned.fill(
-                    child: imageUrl != null
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : Container(
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.place, size: 48),
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.2),
+                              Colors.black.withOpacity(0.5),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
                           ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withOpacity(0.2),
-                            Colors.black.withOpacity(0.5),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    top: 40,
-                    left: 16,
-                    child: _buildTag(
-                      _currentPlace.genre ?? "Venue",
-                      Icons.flag,
-                    ),
-                  ),
-                  if (_currentPlace.isFeatured == true)
                     Positioned(
                       top: 40,
-                      right: canManage ? 100 : 16,
+                      left: 16,
                       child: _buildTag(
-                        "Featured",
-                        Icons.star,
-                        color: Colors.amber[700],
+                        _currentPlace.genre ?? "Venue",
+                        Icons.flag,
                       ),
                     ),
-                ],
-              ),
-            ),
-          ),
-
-          SliverList(
-            delegate: SliverChildListDelegate([
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(18.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title
-                            Text(
-                              _currentPlace.name,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Price and Rating Row
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.green[50],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        "Price per session",
-                                        style: TextStyle(color: Colors.green),
-                                      ),
-                                      Text(
-                                        "Rp ${_currentPlace.price}",
-                                        style: TextStyle(
-                                          color: Colors.green[800],
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        size: 18,
-                                        color: Colors.amber,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        (_currentPlace.averageRating ?? 0)
-                                            .toStringAsFixed(1),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        " (${_currentPlace.reviewCount ?? 0})",
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Location and Genre Row (wrapped for overflow safety)
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 8,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.location_on,
-                                        size: 16,
-                                        color: Colors.blueGrey,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          "${_currentPlace.city ?? "-"}, ${_currentPlace.province ?? "-"}",
-                                          style: const TextStyle(
-                                            color: Colors.blueGrey,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                _buildTag(
-                                  _currentPlace.genre ?? "Venue",
-                                  Icons.flag,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            // Description
-                            Text(
-                              _currentPlace.description ??
-                                  "Tidak ada deskripsi.",
-                              style: const TextStyle(
-                                fontSize: 15,
-                                height: 1.5,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
+                    if (_currentPlace.isFeatured == true)
+                      Positioned(
+                        top: 40,
+                        right: canManage ? 100 : 16,
+                        child: _buildTag(
+                          "Featured",
+                          Icons.star,
+                          color: Colors.amber[700],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[800],
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TicketListPage(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.airplane_ticket),
-                            label: const Text("Pesan Tiket"),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Ulasan Pengunjung",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    FutureBuilder<List<Review>>(
-                      future: _reviewsFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Gagal memuat ulasan: ${snapshot.error}',
-                                style: const TextStyle(color: Colors.redAccent),
-                              ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: _refreshReviews,
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Coba Lagi'),
-                              ),
-                            ],
-                          );
-                        }
-                        final reviews = snapshot.data ?? [];
-                        final average = _computeAverage(reviews);
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.yellow[50],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.star, color: Colors.amber),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    average.toStringAsFixed(1),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    " (${reviews.length})",
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (reviews.isEmpty)
-                              const Text(
-                                "Belum ada ulasan. Jadilah yang pertama!",
-                              ),
-                            if (reviews.isNotEmpty)
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: reviews.length,
-                                itemBuilder: (context, index) {
-                                  final review = reviews[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor: Colors.blue[100],
-                                            child: Text(
-                                              review.userName.isNotEmpty
-                                                  ? review.userName[0]
-                                                        .toUpperCase()
-                                                  : "?",
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      review.userName,
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 4,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.green[50],
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      child: Row(
-                                                        children: [
-                                                          const Icon(
-                                                            Icons.star,
-                                                            size: 14,
-                                                            color: Colors.amber,
-                                                          ),
-                                                          const SizedBox(
-                                                            width: 4,
-                                                          ),
-                                                          Text(
-                                                            review.rating
-                                                                .toString(),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(review.comment),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  review.createdAt.substring(
-                                                    0,
-                                                    10,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if (request.loggedIn)
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete_outline,
-                                                color: Colors.redAccent,
-                                              ),
-                                              onPressed: () => _deleteReview(
-                                                request,
-                                                review.id,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            const SizedBox(height: 80),
-                          ],
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
-            ]),
-          ),
-        ],
+            ),
+
+            SliverList(
+              delegate: SliverChildListDelegate([
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title
+                              Text(
+                                _currentPlace.name,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Price and Rating Row
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Price per session",
+                                          style: TextStyle(color: Colors.green),
+                                        ),
+                                        Text(
+                                          "Rp ${_currentPlace.price}",
+                                          style: TextStyle(
+                                            color: Colors.green[800],
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          size: 18,
+                                          color: Colors.amber,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          (_currentPlace.averageRating ?? 0)
+                                              .toStringAsFixed(1),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          " (${_currentPlace.reviewCount ?? 0})",
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Location and Genre Row (wrapped for overflow safety)
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 8,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 16,
+                                          color: Colors.blueGrey,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            "${_currentPlace.city ?? "-"}, ${_currentPlace.province ?? "-"}",
+                                            style: const TextStyle(
+                                              color: Colors.blueGrey,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildTag(
+                                    _currentPlace.genre ?? "Venue",
+                                    Icons.flag,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              // Description
+                              Text(
+                                _currentPlace.description ??
+                                    "Tidak ada deskripsi.",
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 1.5,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[800],
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TicketListPage(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.airplane_ticket),
+                              label: const Text("Pesan Tiket"),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "Ulasan Pengunjung",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      FutureBuilder<List<Review>>(
+                        future: _reviewsFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Gagal memuat ulasan: ${snapshot.error}',
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _refreshReviews,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            );
+                          }
+                          final reviews = snapshot.data ?? [];
+                          final average = _computeAverage(reviews);
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.yellow[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      average.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      " (${reviews.length})",
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (reviews.isEmpty)
+                                const Text(
+                                  "Belum ada ulasan. Jadilah yang pertama!",
+                                ),
+                              if (reviews.isNotEmpty)
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: reviews.length,
+                                  itemBuilder: (context, index) {
+                                    final review = reviews[index];
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: Colors.blue[100],
+                                              child: Text(
+                                                review.userName.isNotEmpty
+                                                    ? review.userName[0]
+                                                          .toUpperCase()
+                                                    : "?",
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        review.userName,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Colors.green[50],
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            const Icon(
+                                                              Icons.star,
+                                                              size: 14,
+                                                              color:
+                                                                  Colors.amber,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              review.rating
+                                                                  .toString(),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(review.comment),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    review.createdAt.substring(
+                                                      0,
+                                                      10,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (request.loggedIn)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.redAccent,
+                                                ),
+                                                onPressed: () => _deleteReview(
+                                                  request,
+                                                  review.id,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              const SizedBox(height: 80),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+            ),
+          ],
+        ),
       ),
     );
   }
