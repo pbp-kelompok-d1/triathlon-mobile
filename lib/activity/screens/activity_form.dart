@@ -5,6 +5,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/activity/models/activity_model.dart';
 import 'package:triathlon_mobile/activity/screens/activity_menu.dart';
+import 'package:triathlon_mobile/constants.dart';
 
 class ActivityFormPage extends StatefulWidget {
   final Activity? activity;
@@ -35,6 +36,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     {'value': 'swimming', 'label': 'Swimming'},
   ];
 
+
   @override
   void initState() {
     super.initState();
@@ -45,16 +47,12 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       _sportCategory = widget.activity!.sportCategory;
       
       // Parse duration
-      // Assuming duration is "HH:MM:SS" or similar
+      //"HH:MM:SS" 
       try {
           final parts = widget.activity!.duration.split(':');
           if (parts.length >= 2) {
-              // Handle "days, HH:MM:SS" if present, but simple split for now
-              // If format is "H:MM:SS"
-              // If format is "P days, H:MM:SS" -> complex
-              // Let's try a simple regex or split
-              // The Django view sends str(duration) which might be "1 day, 2:00:00"
-              // For now, let's just try to parse HH:MM:SS from the end
+              // For format "D days, H:MM:SS" (WIP)
+              // Simple regex or split
               final timePart = widget.activity!.duration.split(' ').last; 
               final timeParts = timePart.split(':');
               if (timeParts.length == 3) {
@@ -70,7 +68,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
               }
           }
       } catch (e) {
-          // ignore
+          // ignore lol
       }
 
       // Date
@@ -79,12 +77,77 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         _selectedDate = DateTime.parse(widget.activity!.doneAtIso);
         _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
       } catch (e) {
-        // ignore
+        // ignore lol
       }
     } else {
         // Default date to today
         _selectedDate = DateTime.now();
         _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    }
+  }
+
+  Future<void> _submitPost(bool editing) async {
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final request = context.read<CookieRequest>();
+
+    try {
+      final h = _durationHoursController.text;
+      final m = _durationMinutesController.text.padLeft(2, '0');
+      final duration = "$h:$m"; 
+
+      final body = {
+        'title': _titleController.text,
+        'sport_category': _sportCategory,
+        'distance': _distanceController.text,
+        'duration': duration,
+        'done_at': _dateController.text,
+        'notes': _notesController.text,
+        'place_id': '', // Optional
+      };
+
+      final url = editing ? "$baseUrl/activities/edit/${widget.activity!.id}" : "$baseUrl/activities/create/";
+
+      // Send POST request to correct endpoint
+      final response = await request.post(
+        url,
+        body,
+      );
+
+      if (!mounted) return;
+
+      // Handle response
+      if (response['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity logged successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Return true to indicate successful creation
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to activate'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+      }
     }
   }
 
@@ -267,66 +330,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                        // Prepare data
-                        final h = _durationHoursController.text;
-                        final m = _durationMinutesController.text.padLeft(2, '0');
-                        final duration = "$h:$m"; // Backend expects "H:MM" or similar? 
-                        // Wait, backend view:
-                        // duration = `${String(h)}:${String(m).padStart(2,'0')}`;
-                        // fd.append('duration', duration);
-                        // So "H:MM" is fine.
-
-                        final body = {
-                            'title': _titleController.text,
-                            'sport_category': _sportCategory,
-                            'distance': _distanceController.text,
-                            'duration': duration,
-                            'done_at': _dateController.text,
-                            'notes': _notesController.text,
-                            'place_id': '', // Optional
-                        };
-
-                        final url = isEdit
-                            ? "http://127.0.0.1:8000/activities/edit/${widget.activity!.id}"
-                            : "http://127.0.0.1:8000/activities/create/";
-
-                        try {
-                            // Using post (multipart/form-data) or postJson?
-                            // Backend uses request.POST, so standard form data is expected.
-                            // CookieRequest.post handles map as form fields.
-                            final response = await request.post(url, body);
-
-                            if (context.mounted) {
-                                // Response might be "CREATED" string or JSON depending on view
-                                // create_activity_ajax returns HttpResponse(b"CREATED", status=201)
-                                // edit_activity_ajax returns HttpResponse(b"UPDATED", status=200)
-                                // CookieRequest.post returns dynamic. If it's not JSON, it might be the string body?
-                                // Actually pbp_django_auth tries to decode JSON. If it fails, it returns the string?
-                                // Let's check pbp_django_auth documentation or assume it returns the response.
-                                
-                                // Actually, if the backend returns plain text "CREATED", pbp_django_auth might return it as is.
-                                // Or it might throw an error if it expects JSON.
-                                // But let's assume it works.
-                                
-                                // Ideally backend should return JSON. But I can't change backend.
-                                // Let's assume success if no error thrown.
-                                
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isEdit ? "Activity updated!" : "Activity created!")),
-                                );
-                                Navigator.pop(context);
-                            }
-                        } catch (e) {
-                            if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("Error: $e")),
-                                );
-                            }
-                        }
-                    }
-                  },
+                  onPressed: () async {_submitPost(isEdit);},
                   child: Text(isEdit ? "Save Changes" : "Create Activity"),
                 ),
               ),

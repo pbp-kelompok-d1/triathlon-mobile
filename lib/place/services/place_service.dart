@@ -50,7 +50,13 @@ class PlaceService {
 
   Future<List<ProvinceStat>> fetchProvinceStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/place/api/province-stats/'));
+      final url = '$baseUrl/place/api/province-stats/';
+      print('Fetching province stats from: $url');
+      
+      final response = await http.get(Uri.parse(url));
+      
+      print('Province stats status: ${response.statusCode}');
+      print('Province stats body: ${response.body}');
 
       if (response.statusCode == 404) {
         // Endpoint doesn't exist - return empty list instead of throwing
@@ -69,6 +75,8 @@ class PlaceService {
 
       return provinceStatFromJson(body);
     } catch (e) {
+      // Log error untuk debugging
+      print('Error fetching province stats: $e');
       // Return empty list on error to prevent UI crash
       return [];
     }

@@ -26,6 +26,8 @@ import '../../place/services/place_service.dart';
 import '../models/forum_post.dart';
 import '../models/forum_reply.dart';
 import '../services/forum_service.dart';
+import '../widgets/shimmer_loading.dart';  // Shimmer loading widgets
+import '../widgets/page_transitions.dart';  // Custom page transitions
 import 'forum_edit.dart';
 import 'forum_user_profile.dart';  // Import user profile page for navigation
 
@@ -157,14 +159,14 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     }
   }
 
-  /// Navigate to edit screen
+  /// Navigate to edit screen with fade transition
   Future<void> _navigateToEdit() async {
     if (_post == null) return;
     
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ForumEditPage(post: _post!),
+      ForumPageTransitions.fadeIn(
+        ForumEditPage(post: _post!),
       ),
     );
     
@@ -270,7 +272,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     final currentUsername = request.jsonData['username'];
     final currentUserRole = request.jsonData['role'];
 
-    // Show loading state
+    // Show loading state with shimmer effect
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -278,7 +280,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           backgroundColor: const Color(0xFF1D4ED8),
           foregroundColor: Colors.white,
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const ForumDetailShimmer(),
       );
     }
 
@@ -369,12 +371,18 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   ),
                   if (_postData!['is_pinned'] == true) const SizedBox(height: 8),
                   
-                  // Title
-                  Text(
-                    _postData!['title'],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  // Title with Hero animation
+                  Hero(
+                    tag: 'post_title_${widget.postId}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        _postData!['title'],
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -475,11 +483,76 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Render each reply
+                  // Render each reply with staggered animation and swipe-to-delete
                   ..._replies.asMap().entries.map((entry) {
                     final index = entry.key;
                     final reply = entry.value;
-                    return _buildReplyCard(reply, index + 2, currentUsername, currentUserRole);
+                    final canDelete = ForumService.canDelete(
+                      currentUsername,
+                      reply.author,
+                      currentUserRole,
+                    );
+                    
+                    // Wrap with Dismissible for swipe-to-delete (if user has permission)
+                    Widget replyCard = _buildReplyCard(reply, index + 2, currentUsername, currentUserRole);
+                    
+                    if (canDelete) {
+                      replyCard = Dismissible(
+                        key: Key('reply_${reply.id}'),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.red[400],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.delete, color: Colors.white, size: 28),
+                        ),
+                        confirmDismiss: (_) async {
+                          // Show confirmation dialog before deleting
+                          return await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Reply'),
+                              content: const Text('Are you sure you want to delete this reply?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          ) ?? false;
+                        },
+                        onDismissed: (_) => _deleteReply(reply.id),
+                        child: replyCard,
+                      );
+                    }
+                    
+                    // Wrap with animated entry (slide + fade with stagger)
+                    return TweenAnimationBuilder<double>(
+                      key: ValueKey('reply_anim_${reply.id}'),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Transform.translate(
+                          offset: Offset(30 * (1 - value), 0),
+                          child: Opacity(
+                            opacity: value,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: replyCard,
+                    );
                   }),
                   
                   // Empty state for no replies
