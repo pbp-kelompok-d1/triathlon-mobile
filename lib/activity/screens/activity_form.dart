@@ -47,16 +47,12 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       _sportCategory = widget.activity!.sportCategory;
       
       // Parse duration
-      // Assuming duration is "HH:MM:SS" or similar
+      //"HH:MM:SS" 
       try {
           final parts = widget.activity!.duration.split(':');
           if (parts.length >= 2) {
-              // Handle "days, HH:MM:SS" if present, but simple split for now
-              // If format is "H:MM:SS"
-              // If format is "P days, H:MM:SS" -> complex
-              // Let's try a simple regex or split
-              // The Django view sends str(duration) which might be "1 day, 2:00:00"
-              // For now, let's just try to parse HH:MM:SS from the end
+              // For format "D days, H:MM:SS" (WIP)
+              // Simple regex or split
               final timePart = widget.activity!.duration.split(' ').last; 
               final timeParts = timePart.split(':');
               if (timeParts.length == 3) {
