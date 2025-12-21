@@ -19,6 +19,9 @@
 
 ---
 
+## TAUTAN APLIKASI
+[Download Triathlon Now!](https://app.bitrise.io/app/3b5e62c5-5201-4305-a4a0-460a802bc349/installable-artifacts/2d081c9ce1bbc233/public-install-page/cb045bfe553f212a45f65672f56666f9)
+
 ## 🧭 **Deskripsi Aplikasi**
 
 Di tengah meningkatnya tren gaya hidup sehat dan popularitas olahraga ketahanan (endurance sports) seperti lari, sepeda, dan renang di Indonesia, muncul sebuah tantangan besar: **fragmentasi ekosistem digital.**
