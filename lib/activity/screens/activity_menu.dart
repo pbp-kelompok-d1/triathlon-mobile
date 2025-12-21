@@ -6,6 +6,7 @@ import 'package:triathlon_mobile/activity/screens/activity_form.dart';
 import 'package:triathlon_mobile/activity/widgets/activity_card.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/widgets/left_drawer.dart';
+import 'package:intl/intl.dart';
 
 class ActivityMenu extends StatefulWidget {
   const ActivityMenu({super.key});
@@ -56,6 +57,113 @@ class _ActivityMenuState extends State<ActivityMenu> {
     setState(() {
       _futureActivities = fetchActivities(request);
     });
+  }
+
+  Future<void> _deletePost(Activity act) async {
+    final request = context.read<CookieRequest>();
+
+    final url = "$baseUrl/activities/delete/${act.id}";
+
+    final _titleController = TextEditingController();
+    final _distanceController = TextEditingController();
+    final _notesController = TextEditingController();
+    final _durationHoursController = TextEditingController();
+    final _durationMinutesController = TextEditingController();
+    final _dateController = TextEditingController();
+
+    DateTime? _selectedDate;
+    
+    _titleController.text = act.title;
+    _distanceController.text = act.distance.toString();
+    _notesController.text = act.notesFull;
+    String _sportCategory = act.sportCategory;
+
+    // Parse duration
+    //"HH:MM:SS" 
+    try {
+        final parts = act.duration.split(':');
+        if (parts.length >= 2) {
+            // For format "D days, H:MM:SS" (WIP)
+            // Simple regex or split
+            final timePart = act.duration.split(' ').last; 
+            final timeParts = timePart.split(':');
+            if (timeParts.length == 3) {
+                int h = int.parse(timeParts[0]);
+                int m = int.parse(timeParts[1]);
+                // Add days to hours if present
+                if (act.duration.contains('day')) {
+                    final dayPart = act.duration.split(' day')[0];
+                    h += int.parse(dayPart) * 24;
+                }
+                _durationHoursController.text = h.toString();
+                _durationMinutesController.text = m.toString();
+            }
+        }
+    } catch (e) {
+        // ignore lol
+    }
+
+    // Date
+    // doneAtIso is "YYYY-MM-DD"
+    try {
+      _selectedDate = DateTime.parse(act.doneAtIso);
+      _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    } catch (e) {
+      // ignore lol
+    }
+
+    try {
+      final h = _durationHoursController.text;
+      final m = _durationMinutesController.text.padLeft(2, '0');
+      final duration = "$h:$m"; 
+
+      final body = {
+          'title': _titleController.text,
+          'sport_category': _sportCategory,
+          'distance': _distanceController.text,
+          'duration': duration,
+          'done_at': _dateController.text,
+          'notes': _notesController.text,
+          'place_id': '', // Optional
+        };
+
+
+      final response = await request.post(url,body);
+
+      if (!mounted) return;
+
+      // Handle response
+      if (response['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity Deleted!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Return true to indicate successful creation
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to Delete'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+      }
+    }
+    _refresh();
+
   }
 
   String _sportFor(Activity a) {
@@ -446,15 +554,13 @@ class _ActivityMenuState extends State<ActivityMenu> {
                           );
                         },
                         onEdit: () {
-                          Navigator.pushReplacement(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => ActivityFormPage(activity: activity,))
                           );
                         },
-                        onDelete: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Delete not wired yet.")),
-                          );
+                        onDelete: () async {
+                          _deletePost(activity);
                         },
                       );
                     },
