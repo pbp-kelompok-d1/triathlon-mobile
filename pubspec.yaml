@@ -48,6 +48,7 @@ dependencies:
   shimmer: ^3.0.0
   # Animations package for staggered animations and advanced transitions
   animations: ^2.0.11
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +72,7 @@ dev_dependencies:
 flutter:
   assets:
         - assets/images/
+        - .env
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

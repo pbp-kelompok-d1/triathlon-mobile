@@ -40,10 +40,13 @@ import 'forum_form.dart';
 import 'forum_user_profile.dart';  // Import for user profile navigation
 
 // =============================================================================
-// BONUS FEATURE IMPORTS: Advanced Animations & Shimmer Loading
+// BONUS FEATURE IMPORTS: Advanced Animations, Caching & Performance
 // =============================================================================
 import '../widgets/shimmer_loading.dart';       // Skeleton loading with shimmer effect
 import '../widgets/page_transitions.dart';      // Custom page transitions
+import '../services/forum_cache_service.dart';  // BONUS: Caching for performance
+import '../../utils/debouncer.dart';            // BONUS: Debounced search
+import '../../config/env_config.dart';          // BONUS: Environment configuration
 
 /// Main forum listing page showing all forum posts
 class ForumListPage extends StatefulWidget {
@@ -52,6 +55,7 @@ class ForumListPage extends StatefulWidget {
   @override
   State<ForumListPage> createState() => _ForumListPageState();
 }
+
 
 class _ForumListPageState extends State<ForumListPage>
     with TickerProviderStateMixin {
@@ -69,6 +73,13 @@ class _ForumListPageState extends State<ForumListPage>
   bool _isFabVisible = true;
   // Scroll controller for detecting scroll direction
   final ScrollController _scrollController = ScrollController();
+  
+  // ---------------------------------------------------------------------------
+  // BONUS: Debouncer for Search Optimization
+  // ---------------------------------------------------------------------------
+  // Prevents excessive filtering on every keystroke
+  // Uses configurable delay from environment settings
+  late Debouncer _searchDebouncer;
   
   // ---------------------------------------------------------------------------
   // Search State
@@ -137,8 +148,15 @@ class _ForumListPageState extends State<ForumListPage>
   @override
   void initState() {
     super.initState();
+    
+    // =========================================================================
+    // BONUS: Initialize Debouncer with configurable delay from environment
+    // =========================================================================
+    // This prevents excessive UI updates while user is typing in search
+    _searchDebouncer = Debouncer(milliseconds: env.searchDebounceMs);
+    
     _refreshPosts();
-    // Listen to search input changes for real-time filtering
+    // Listen to search input changes for debounced filtering
     _searchController.addListener(_onSearchChanged);
     
     // =========================================================================
@@ -161,6 +179,8 @@ class _ForumListPageState extends State<ForumListPage>
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    // BONUS: Dispose debouncer to prevent memory leaks
+    _searchDebouncer.dispose();
     // BONUS: Dispose animation controllers
     _fabAnimationController.dispose();
     _scrollController.removeListener(_onScroll);
@@ -190,19 +210,36 @@ class _ForumListPageState extends State<ForumListPage>
     }
   }
 
-  /// Called when search text changes - updates filter state
+  // ===========================================================================
+  // BONUS: Debounced Search Handler
+  // ===========================================================================
+  /// Called when search text changes - uses debouncer to delay filter updates
+  /// This prevents excessive UI rebuilds while user is still typing
+  /// Debounce delay is configurable via environment variable SEARCH_DEBOUNCE_MS
   void _onSearchChanged() {
-    setState(() {
-      _searchQuery = _searchController.text.toLowerCase();
+    _searchDebouncer.run(() {
+      if (mounted) {
+        setState(() {
+          _searchQuery = _searchController.text.toLowerCase();
+        });
+      }
     });
   }
 
   // ===========================================================================
-  // Data Fetching
+  // Data Fetching with Caching
   // ===========================================================================
 
-  /// Fetch forum posts from the Django API
+  /// Fetch forum posts from the Django API with caching support
+  /// BONUS: Checks cache first to reduce API calls and improve performance
   Future<List<ForumPost>> _fetchForumPosts(CookieRequest request) async {
+    // BONUS: Check cache first
+    final cachedPosts = forumCache.getCachedPosts();
+    if (cachedPosts != null) {
+      return cachedPosts;
+    }
+    
+    // Fetch from API if not cached
     final response = await request.get('$baseUrl/forum/json/');
     
     List<ForumPost> posts = [];
@@ -211,11 +248,19 @@ class _ForumListPageState extends State<ForumListPage>
         posts.add(ForumPost.fromJson(d));
       }
     }
+    
+    // BONUS: Cache the fetched posts for future requests
+    forumCache.cachePosts(posts);
+    
     return posts;
   }
 
   /// Trigger a refresh of the posts list
+  /// BONUS: Invalidates cache to force fresh data from API
   void _refreshPosts() {
+    // BONUS: Invalidate cache to get fresh data
+    forumCache.invalidatePostsCache();
+    
     final request = context.read<CookieRequest>();
     setState(() {
       _postsFuture = _fetchForumPosts(request);
