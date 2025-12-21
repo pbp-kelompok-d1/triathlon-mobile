@@ -3,24 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:triathlon_mobile/constants.dart';
+import 'package:triathlon_mobile/place/models/place.dart';
 
-class PlaceFormScreen extends StatefulWidget {
-  const PlaceFormScreen({super.key});
+class PlaceEditScreen extends StatefulWidget {
+  final Place place;
+
+  const PlaceEditScreen({super.key, required this.place});
 
   @override
-  State<PlaceFormScreen> createState() => _PlaceFormScreenState();
+  State<PlaceEditScreen> createState() => _PlaceEditScreenState();
 }
 
-class _PlaceFormScreenState extends State<PlaceFormScreen> {
+class _PlaceEditScreenState extends State<PlaceEditScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _provinceController = TextEditingController();
-  final _imageUrlController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _cityController;
+  late TextEditingController _provinceController;
+  late TextEditingController _imageUrlController;
 
   String? _selectedGenre;
   final List<String> _genres = [
@@ -28,6 +31,19 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
     'Running Track',
     'Bicycle Tracking',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with existing place data
+    _nameController = TextEditingController(text: widget.place.name);
+    _priceController = TextEditingController(text: widget.place.price);
+    _descriptionController = TextEditingController(text: widget.place.description ?? '');
+    _cityController = TextEditingController(text: widget.place.city ?? '');
+    _provinceController = TextEditingController(text: widget.place.province ?? '');
+    _imageUrlController = TextEditingController(text: widget.place.image ?? '');
+    _selectedGenre = widget.place.genre;
+  }
 
   @override
   void dispose() {
@@ -51,10 +67,7 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
 
     setState(() => _isLoading = true);
 
-    final url = "$baseUrl/place/api/add-place/";
-
-    // Get the image URL as-is
-    final imageUrl = _imageUrlController.text.trim();
+    final url = "$baseUrl/place/api/edit-place/${widget.place.id}/";
 
     final payload = {
       'name': _nameController.text.trim(),
@@ -63,16 +76,14 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
       'city': _cityController.text.trim(),
       'province': _provinceController.text.trim(),
       'genre': _selectedGenre!,
-      'image_url': imageUrl,
+      'image_url': _imageUrlController.text.trim(),
     };
 
     try {
-      // Debug: cek apakah user sudah login
-      debugPrint('User logged in: ${request.loggedIn}');
+      debugPrint('Editing place ID: ${widget.place.id}');
       debugPrint('Sending to: $url');
-      debugPrint('Image URL (raw): $imageUrl');
 
-      // Use postJson to prevent pbp_django_auth from converting image URLs to base64
+      // Use postJson to prevent base64 conversion
       final response = await request.postJson(
         url,
         jsonEncode(payload),
@@ -85,25 +96,22 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
       if (context.mounted) {
         if (response['success'] == true || response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Tempat berhasil ditambahkan!")),
+            const SnackBar(content: Text("Tempat berhasil diperbarui!")),
           );
-          Navigator.pop(context, true);
+          Navigator.pop(context, true); // Return true to indicate success
         } else {
-          final errorMsg =
-              response['message'] ??
-              response['error'] ??
-              'Gagal menambahkan tempat';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Gagal: $errorMsg")));
+          final errorMsg = response['message'] ?? response['error'] ?? 'Gagal memperbarui tempat';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Gagal: $errorMsg")),
+          );
         }
       }
     } catch (e) {
       setState(() => _isLoading = false);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
       }
     }
   }
@@ -114,7 +122,7 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tambah Tempat Baru"),
+        title: const Text("Edit Tempat"),
         backgroundColor: Colors.blue[900],
         foregroundColor: Colors.white,
       ),
@@ -123,6 +131,7 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Image URL field
             TextFormField(
               controller: _imageUrlController,
               decoration: const InputDecoration(
@@ -134,6 +143,8 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
+            
+            // Image preview
             if (_imageUrlController.text.trim().isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -153,17 +164,20 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               ),
             if (_imageUrlController.text.trim().isNotEmpty)
               const SizedBox(height: 20),
+            
+            // Name field
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: "Nama Tempat *",
                 border: OutlineInputBorder(),
               ),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? "Nama tidak boleh kosong"
-                  : null,
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? "Nama tidak boleh kosong" : null,
             ),
             const SizedBox(height: 12),
+            
+            // Price field
             TextFormField(
               controller: _priceController,
               decoration: const InputDecoration(
@@ -171,25 +185,25 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? "Harga tidak boleh kosong"
-                  : null,
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? "Harga tidak boleh kosong" : null,
             ),
             const SizedBox(height: 12),
+            
+            // Genre dropdown
             DropdownButtonFormField<String>(
-              value: _selectedGenre,
+              value: _genres.contains(_selectedGenre) ? _selectedGenre : null,
               hint: const Text("Pilih Genre *"),
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: _genres.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
+                return DropdownMenuItem<String>(value: value, child: Text(value));
               }).toList(),
               onChanged: (val) => setState(() => _selectedGenre = val),
               validator: (value) => value == null ? "Pilih genre" : null,
             ),
             const SizedBox(height: 12),
+            
+            // City field
             TextFormField(
               controller: _cityController,
               decoration: const InputDecoration(
@@ -198,6 +212,8 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            
+            // Province field
             TextFormField(
               controller: _provinceController,
               decoration: const InputDecoration(
@@ -206,6 +222,8 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            
+            // Description field
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
@@ -215,6 +233,8 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 24),
+            
+            // Submit button
             ElevatedButton(
               onPressed: _isLoading ? null : () => _submitForm(request),
               style: ElevatedButton.styleFrom(
@@ -226,12 +246,9 @@ class _PlaceFormScreenState extends State<PlaceFormScreen> {
                   ? const SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
-                  : const Text("Simpan Tempat", style: TextStyle(fontSize: 16)),
+                  : const Text("Simpan Perubahan", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
