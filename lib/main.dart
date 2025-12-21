@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
-import 'screens/login.dart';
-import 'package:triathlon_mobile/place/screens/place_list_screen.dart';
 import 'screens/onboarding_page.dart';
 
-void main() {
+// BONUS: Environment Configuration
+import 'config/env_config.dart';
+
+void main() async {
+  // Ensure Flutter bindings are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // BONUS: Load environment configuration from .env file
+  // This allows secure management of API keys and environment-specific settings
+  await env.load();
+  
   // Bootstraps the app with the shared CookieRequest client so every screen can hit Django.
   runApp(const MyApp());
 }
