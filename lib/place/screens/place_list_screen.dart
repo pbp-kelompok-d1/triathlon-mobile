@@ -9,6 +9,7 @@ import 'package:triathlon_mobile/screens/login.dart';
 import 'package:triathlon_mobile/place/screens/place_form_screen.dart';
 import 'package:triathlon_mobile/constants.dart';
 import 'package:triathlon_mobile/user_profile/models/user_profile_model.dart';
+import 'package:triathlon_mobile/place/widgets/shimmer_loading.dart';
 
 class PlaceListScreen extends StatefulWidget {
   const PlaceListScreen({super.key});
@@ -212,7 +213,7 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
           : null,
 
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const PlaceShimmerLoading() // Shimmer loading effect
           : Stack(
               children: [
                 // 1. BACKGROUND IMAGE (Layer Paling Bawah)
@@ -418,13 +419,17 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
     final imageUrl = _resolveImageUrl(place.image);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PlaceDetailScreen(place: place),
           ),
         );
+        // Refresh list if place was edited/deleted/reviewed
+        if (result == true) {
+          _loadPlaces();
+        }
       },
       child: Container(
         width: 260,
@@ -611,13 +616,17 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
     if (locationText.isEmpty) locationText = '-';
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PlaceDetailScreen(place: place),
           ),
         );
+        // Refresh list if place was edited/deleted/reviewed
+        if (result == true) {
+          _loadPlaces();
+        }
       },
       child: Card(
         elevation: 4,
