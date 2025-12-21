@@ -167,7 +167,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // --- HEADER BIRU ---
+                            // Header Card
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(24),
@@ -196,7 +196,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // KIRI: ID
+                                      // Ticket ID
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -212,12 +212,11 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                                         ],
                                       ),
                                       
-                                      // KANAN: Status Badge
+                                      // Status Badge
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          // PERUBAHAN PENTING DI SINI:
-                                          // Kita HAPUS .withOpacity(0.8) di sini karena opacity sudah diatur di fungsi _getStatusColor di bawah.
+                
                                           color: _getStatusColor(_ticket!.getStatus()), 
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(color: Colors.white, width: 1.5),
@@ -239,7 +238,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
 
                             const SizedBox(height: 24),
 
-                            // DETAILS CARD
+                            // Detail Card
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
@@ -284,7 +283,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
 
                             const SizedBox(height: 40),
 
-                            // ACTION BUTTONS
+                            // Actions: Edit & Delete
                             Row(
                               children: [
                                 Expanded(
