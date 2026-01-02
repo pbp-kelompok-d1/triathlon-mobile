@@ -164,7 +164,10 @@ https://medium.com/@alfarissimhelmi/elevating-user-experience-implementing-stagg
 
 Aidam - Forum 
 
-1. https://www.linkedin.com/posts/aidamkaila_flutter-mobiledev-pbp-activity-7408457829206130688-hhN3?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
+1. https://www.linkedin.com/posts/aidamkaila_flutter-mobiledev-pbp-activity-7408457829206130688-hhN3?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw (BROKEN)
+1. https://www.linkedin.com/posts/aidamkaila_flutter-mobiledev-pbp-activity-7412702461968363520-eaX4?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw (FIXED INSHA ALLAH)
+<img width="463" height="643" alt="image" src="https://github.com/user-attachments/assets/f64e0e19-e9c2-44b0-a1df-a97bed1129ac" />
+
 2. https://www.linkedin.com/posts/aidamkaila_flutterperformance-mobileux-dart-activity-7408460584842825728-n6O8?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
 3. https://www.linkedin.com/posts/aidamkaila_unittesting-flutter-softwaretesting-activity-7408467574214057984-cJAr?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEDrR-kBC8BXmNvK2-1yT6nkUs4KDiCDHYw
 
